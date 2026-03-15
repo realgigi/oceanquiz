@@ -31,6 +31,33 @@
                 <button id="start-btn" aria-label="開始遊戲"></button>
             </div>
 
+            <!-- Category selection screen -->
+            <div id="category-screen" class="screen">
+                <div class="category-title">選擇題庫</div>
+                <div class="category-list">
+                    <button class="category-btn" data-cat="restoration">
+                        <span class="cat-icon">🐠</span>
+                        <span class="cat-name">資源復育</span>
+                        <span class="cat-count" id="count-restoration">0 題</span>
+                    </button>
+                    <button class="category-btn" data-cat="ecology">
+                        <span class="cat-icon">🌊</span>
+                        <span class="cat-name">海洋生態</span>
+                        <span class="cat-count" id="count-ecology">0 題</span>
+                    </button>
+                    <button class="category-btn" data-cat="aquaculture">
+                        <span class="cat-icon">🦐</span>
+                        <span class="cat-name">水產養殖</span>
+                        <span class="cat-count" id="count-aquaculture">0 題</span>
+                    </button>
+                    <button class="category-btn category-btn-all" data-cat="all">
+                        <span class="cat-icon">🌏</span>
+                        <span class="cat-name">全部題目</span>
+                        <span class="cat-count" id="count-all">0 題</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Quiz screen -->
             <div id="quiz-screen" class="screen">
                 <div class="top-bar">

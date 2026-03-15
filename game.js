@@ -438,7 +438,14 @@ const Game = {
         document.getElementById('start-btn').addEventListener('click', () => {
             SoundGen.resume();
             SoundGen.play('tap');
-            this.startGame();
+            this.showCategorySelect();
+        });
+
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                SoundGen.playClickSfx();
+                this.startGame(btn.dataset.cat);
+            });
         });
 
         document.querySelectorAll('.answer-btn').forEach(btn => {
@@ -458,7 +465,7 @@ const Game = {
 
         document.getElementById('restart-btn').addEventListener('click', () => {
             SoundGen.play('tap');
-            this.startGame();
+            this.showCategorySelect();
         });
 
         // Resume audio context on first user interaction
@@ -495,14 +502,42 @@ const Game = {
         });
     },
 
-    startGame() {
+    showCategorySelect() {
+        this.state = 'CATEGORY';
+        showScreen('category-screen');
+
+        // Update question counts
+        const cats = { restoration: 0, ecology: 0, aquaculture: 0 };
+        this.questions.forEach(q => { if (cats[q.category] !== undefined) cats[q.category]++; });
+        const total = cats.restoration + cats.ecology + cats.aquaculture;
+        document.getElementById('count-restoration').textContent = cats.restoration + ' 題';
+        document.getElementById('count-ecology').textContent = cats.ecology + ' 題';
+        document.getElementById('count-aquaculture').textContent = cats.aquaculture + ' 題';
+        document.getElementById('count-all').textContent = total + ' 題';
+    },
+
+    startGame(category) {
         this.score = 0;
         this.streak = 0;
         this.correctCount = 0;
         this.currentIndex = 0;
 
-        // Shuffle questions
-        this.shuffledQuestions = [...this.questions].sort(() => Math.random() - 0.5);
+        // Filter by category
+        let pool = this.questions;
+        if (category && category !== 'all') {
+            pool = this.questions.filter(q => q.category === category);
+        }
+
+        // Shuffle questions, pick 10, and randomize choice order
+        this.shuffledQuestions = [...pool].sort(() => Math.random() - 0.5).slice(0, 10).map(q => {
+            // Build index array [0,1,2,3], shuffle it
+            const indices = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+            return {
+                ...q,
+                choices: indices.map(i => q.choices[i]),
+                answer: indices.indexOf(q.answer),
+            };
+        });
 
         SoundGen.startBGM();
         this.showQuiz();
