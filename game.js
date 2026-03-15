@@ -23,15 +23,129 @@ const SoundGen = {
         this.resume();
         switch (type) {
             case 'tap': this._tone(ctx, 600, 0.08, 'sine', 0.2); break;
-            case 'correct': this._melody(ctx, [523, 659, 784], 0.12, 'sine', 0.25); break;
-            case 'wrong': this._tone(ctx, 200, 0.3, 'sawtooth', 0.15); break;
+            case 'correct': this._correctSfx(ctx); break;
+            case 'wrong': this._wrongSfx(ctx); break;
             case 'tick': this._tone(ctx, 800, 0.05, 'sine', 0.1); break;
-            case 'streak': this._melody(ctx, [523, 659, 784, 1047], 0.1, 'sine', 0.2); break;
-            case 'fanfare': this._melody(ctx, [523, 659, 784, 659, 784, 1047], 0.15, 'sine', 0.3); break;
+            case 'streak': this._streakSfx(ctx); break;
+            case 'fanfare': this._fanfareSfx(ctx); break;
             case 'splash': this._noise(ctx, 0.2, 0.15); break;
-            case 'timesup': this._melody(ctx, [400, 300, 200], 0.2, 'sawtooth', 0.2); break;
+            case 'timesup': this._timesupSfx(ctx); break;
+            case 'countdown': this._countdownSfx(ctx); break;
+            case 'select': this._selectSfx(ctx); break;
+            case 'whoosh': this._whoosh(ctx); break;
             default: break;
         }
+    },
+    // Rich effect sounds
+    _correctSfx(ctx) {
+        // Sparkly rising chime
+        [523, 659, 784, 1047].forEach((f, i) => {
+            const t = ctx.currentTime + i * 0.08;
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.2, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.2);
+            // Harmonic shimmer
+            const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+            o2.type = 'sine'; o2.frequency.value = f * 2;
+            g2.gain.setValueAtTime(0.06, t);
+            g2.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+            o2.connect(g2); g2.connect(ctx.destination); o2.start(t); o2.stop(t + 0.15);
+        });
+    },
+    _wrongSfx(ctx) {
+        // Descending buzz + thud
+        const t = ctx.currentTime;
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(300, t);
+        o.frequency.exponentialRampToValueAtTime(100, t + 0.3);
+        g.gain.setValueAtTime(0.12, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+        o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.35);
+        // Low thud
+        const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(80, t + 0.05);
+        o2.frequency.exponentialRampToValueAtTime(40, t + 0.2);
+        g2.gain.setValueAtTime(0.2, t + 0.05);
+        g2.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        o2.connect(g2); g2.connect(ctx.destination); o2.start(t + 0.05); o2.stop(t + 0.25);
+    },
+    _streakSfx(ctx) {
+        // Triumphant ascending with sparkle
+        [523, 659, 784, 1047, 1319].forEach((f, i) => {
+            const t = ctx.currentTime + i * 0.07;
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.18, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+            o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.25);
+        });
+        // Sparkle noise burst at end
+        setTimeout(() => this._noise(ctx, 0.15, 0.08), 350);
+    },
+    _fanfareSfx(ctx) {
+        // Grand victory fanfare
+        const notes = [523, 523, 659, 784, 784, 1047, 1047, 1319];
+        const durs =  [0.1,  0.1,  0.12, 0.15, 0.1,  0.15, 0.1,  0.3];
+        let t = ctx.currentTime;
+        notes.forEach((f, i) => {
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'triangle'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.22, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + durs[i] + 0.1);
+            o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + durs[i] + 0.1);
+            // Harmony (5th above)
+            const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+            o2.type = 'sine'; o2.frequency.value = f * 1.5;
+            g2.gain.setValueAtTime(0.06, t);
+            g2.gain.exponentialRampToValueAtTime(0.001, t + durs[i] + 0.08);
+            o2.connect(g2); g2.connect(ctx.destination); o2.start(t); o2.stop(t + durs[i] + 0.08);
+            t += durs[i];
+        });
+    },
+    _timesupSfx(ctx) {
+        // Alarm-like descending buzz
+        [500, 400, 300, 200].forEach((f, i) => {
+            const t = ctx.currentTime + i * 0.15;
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'square'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.1, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+            o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.12);
+        });
+    },
+    _countdownSfx(ctx) {
+        // Urgent tick with rising pitch
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 1200;
+        g.gain.setValueAtTime(0.15, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.06);
+    },
+    _selectSfx(ctx) {
+        // Cheerful double blip
+        [880, 1175].forEach((f, i) => {
+            const t = ctx.currentTime + i * 0.08;
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.2, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+            o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.1);
+        });
+    },
+    _whoosh(ctx) {
+        // Screen transition whoosh
+        const n = ctx.sampleRate * 0.3, buf = ctx.createBuffer(1, n, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.sin(i / n * Math.PI);
+        const s = ctx.createBufferSource(); s.buffer = buf;
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass'; bpf.frequency.value = 1000; bpf.Q.value = 0.5;
+        const g = ctx.createGain(); g.gain.value = 0.1;
+        s.connect(bpf); bpf.connect(g); g.connect(ctx.destination); s.start();
     },
     playClickSfx() {
         const ctx = this.getCtx();
@@ -42,6 +156,9 @@ const SoundGen = {
             () => this._shell(ctx),
             () => this._pop(ctx),
             () => this._blip(ctx),
+            () => this._chime(ctx),
+            () => this._sonar(ctx),
+            () => this._splash2(ctx),
         ];
         sfx[Math.floor(Math.random() * sfx.length)]();
     },
@@ -94,6 +211,39 @@ const SoundGen = {
         g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
         o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.06);
     },
+    _chime(ctx) {
+        // Wind chime sound
+        const freqs = [1200, 1500, 1800].map(f => f + Math.random() * 100);
+        freqs.forEach((f, i) => {
+            const t = ctx.currentTime + i * 0.04;
+            const o = ctx.createOscillator(), g = ctx.createGain();
+            o.type = 'sine'; o.frequency.value = f;
+            g.gain.setValueAtTime(0.1, t);
+            g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+            o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.2);
+        });
+    },
+    _sonar(ctx) {
+        // Sonar ping
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = 'sine'; o.frequency.value = 1500;
+        g.gain.setValueAtTime(0.15, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.4);
+    },
+    _splash2(ctx) {
+        // Bigger splash with filter sweep
+        const n = ctx.sampleRate * 0.25, buf = ctx.createBuffer(1, n, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / n * 4);
+        const s = ctx.createBufferSource(); s.buffer = buf;
+        const lpf = ctx.createBiquadFilter();
+        lpf.type = 'lowpass';
+        lpf.frequency.setValueAtTime(5000, ctx.currentTime);
+        lpf.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.25);
+        const g = ctx.createGain(); g.gain.value = 0.15;
+        s.connect(lpf); lpf.connect(g); g.connect(ctx.destination); s.start();
+    },
     // Core helpers
     _tone(ctx, freq, dur, type, vol) {
         const o = ctx.createOscillator(), g = ctx.createGain();
@@ -120,7 +270,7 @@ const SoundGen = {
         s.buffer = buf; g.gain.value = vol;
         s.connect(g); g.connect(ctx.destination); s.start();
     },
-    // BGM: light ocean melody loop
+    // BGM: rich procedural ocean music
     bgmTimer: null,
     startBGM() {
         if (this.bgmNodes) return;
@@ -128,70 +278,601 @@ const SoundGen = {
         this.resume();
 
         const master = ctx.createGain();
-        master.gain.value = 0.12;
+        master.gain.value = 0.10;
         master.connect(ctx.destination);
 
-        // Ambient pad (warm background)
-        const pad = ctx.createOscillator();
-        pad.type = 'sine'; pad.frequency.value = 130.81; // C3
-        const padGain = ctx.createGain(); padGain.gain.value = 0.15;
-        const padLfo = ctx.createOscillator();
-        padLfo.type = 'sine'; padLfo.frequency.value = 0.15;
-        const padLfoGain = ctx.createGain(); padLfoGain.gain.value = 8;
-        padLfo.connect(padLfoGain); padLfoGain.connect(pad.frequency);
-        pad.connect(padGain); padGain.connect(master);
+        // --- Reverb (simulated with delay) ---
+        const delay = ctx.createDelay(); delay.delayTime.value = 0.15;
+        const feedback = ctx.createGain(); feedback.gain.value = 0.25;
+        const wetGain = ctx.createGain(); wetGain.gain.value = 0.3;
+        delay.connect(feedback); feedback.connect(delay);
+        delay.connect(wetGain); wetGain.connect(master);
 
-        const pad2 = ctx.createOscillator();
-        pad2.type = 'sine'; pad2.frequency.value = 196; // G3
-        const pad2Gain = ctx.createGain(); pad2Gain.gain.value = 0.1;
-        pad2.connect(pad2Gain); pad2Gain.connect(master);
+        // --- Warm pad layer (C major 7th chord, slow evolving) ---
+        const padFreqs = [130.81, 164.81, 196, 246.94]; // C3 E3 G3 B3
+        const padOscs = padFreqs.map((freq, i) => {
+            const o = ctx.createOscillator();
+            o.type = 'sine'; o.frequency.value = freq;
+            const g = ctx.createGain(); g.gain.value = 0.06;
+            // Slow LFO for gentle movement
+            const lfo = ctx.createOscillator();
+            lfo.type = 'sine'; lfo.frequency.value = 0.08 + i * 0.03;
+            const lfoG = ctx.createGain(); lfoG.gain.value = 3;
+            lfo.connect(lfoG); lfoG.connect(o.frequency);
+            o.connect(g); g.connect(master); g.connect(delay);
+            o.start(); lfo.start();
+            return { osc: o, lfo };
+        });
 
-        [pad, padLfo, pad2].forEach(o => o.start());
+        // --- Sub bass (gentle pulse) ---
+        const bass = ctx.createOscillator();
+        bass.type = 'sine'; bass.frequency.value = 65.41; // C2
+        const bassG = ctx.createGain(); bassG.gain.value = 0.08;
+        const bassLfo = ctx.createOscillator();
+        bassLfo.type = 'sine'; bassLfo.frequency.value = 0.25;
+        const bassLfoG = ctx.createGain(); bassLfoG.gain.value = 0.04;
+        bassLfo.connect(bassLfoG); bassLfoG.connect(bassG.gain);
+        bass.connect(bassG); bassG.connect(master);
+        bass.start(); bassLfo.start();
 
-        // Melody loop: cute, relaxed ocean feel
-        // C major pentatonic melody in higher register
-        const melodyNotes = [
-            523, 587, 659, 784, 880,  // C5 D5 E5 G5 A5
-            784, 659, 523, 587, 659,  // G5 E5 C5 D5 E5
-            880, 784, 659, 784, 523,  // A5 G5 E5 G5 C5
-            587, 523, 440, 523, 587,  // D5 C5 A4 C5 D5
+        // --- Melody: 4 phrases that rotate, pentatonic + gentle ---
+        const phrases = [
+            // Phrase A: upward hopeful
+            [523, 587, 659, 784, 880, 784, 659, 784],
+            // Phrase B: gentle wave
+            [659, 587, 523, 440, 523, 587, 659, 523],
+            // Phrase C: playful bounce
+            [784, 880, 784, 659, 587, 659, 784, 880],
+            // Phrase D: calm resolve
+            [880, 784, 659, 523, 587, 523, 440, 523],
         ];
-        const noteDur = 0.35;
-        const loopLen = melodyNotes.length * noteDur;
-        let melodyStart = ctx.currentTime + 0.5;
+        const noteDur = 0.38;
+        const phraseLen = 8 * noteDur;
+        let melodyStart = ctx.currentTime + 0.8;
+        let phraseIdx = 0;
 
-        const scheduleLoop = () => {
+        // --- Arpegio layer (background sparkle) ---
+        const arpNotes = [1047, 1319, 1568, 1319, 1047, 880, 1047, 1319]; // C6 E6 G6...
+        const arpDur = 0.3;
+
+        // --- Rhythm: soft kick + hi-hat pattern ---
+        const scheduleRhythm = (startTime) => {
+            const beatDur = noteDur;
+            for (let i = 0; i < 8; i++) {
+                const t = startTime + i * beatDur;
+                // Soft kick on beats 0, 2, 4, 6
+                if (i % 2 === 0) {
+                    const kick = ctx.createOscillator();
+                    kick.type = 'sine'; kick.frequency.setValueAtTime(80, t);
+                    kick.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+                    const kg = ctx.createGain();
+                    kg.gain.setValueAtTime(0.07, t);
+                    kg.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+                    kick.connect(kg); kg.connect(master);
+                    kick.start(t); kick.stop(t + 0.12);
+                }
+                // Soft hi-hat (noise burst) on off-beats
+                if (i % 2 === 1) {
+                    const bufLen = ctx.sampleRate * 0.04;
+                    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+                    const d = buf.getChannelData(0);
+                    for (let j = 0; j < bufLen; j++) d[j] = (Math.random() * 2 - 1) * Math.exp(-j / bufLen * 8);
+                    const hat = ctx.createBufferSource(); hat.buffer = buf;
+                    // High-pass filter for hat
+                    const hpf = ctx.createBiquadFilter();
+                    hpf.type = 'highpass'; hpf.frequency.value = 8000;
+                    const hg = ctx.createGain(); hg.gain.value = 0.03;
+                    hat.connect(hpf); hpf.connect(hg); hg.connect(master);
+                    hat.start(t);
+                }
+            }
+        };
+
+        const schedulePhrase = () => {
             const now = ctx.currentTime;
-            melodyNotes.forEach((freq, i) => {
+            const phrase = phrases[phraseIdx % phrases.length];
+            phraseIdx++;
+
+            // Melody
+            phrase.forEach((freq, i) => {
                 const t = melodyStart + i * noteDur;
-                if (t < now - 0.1) return; // skip past notes
+                if (t < now - 0.1) return;
                 const o = ctx.createOscillator();
                 o.type = 'triangle';
                 o.frequency.value = freq;
                 const g = ctx.createGain();
                 g.gain.setValueAtTime(0, t);
-                g.gain.linearRampToValueAtTime(0.18, t + 0.03);
-                g.gain.setValueAtTime(0.18, t + noteDur * 0.5);
-                g.gain.exponentialRampToValueAtTime(0.001, t + noteDur * 0.95);
-                o.connect(g); g.connect(master);
+                g.gain.linearRampToValueAtTime(0.14, t + 0.03);
+                g.gain.setValueAtTime(0.14, t + noteDur * 0.4);
+                g.gain.exponentialRampToValueAtTime(0.001, t + noteDur * 0.9);
+                o.connect(g); g.connect(master); g.connect(delay);
                 o.start(t); o.stop(t + noteDur);
             });
-            melodyStart += loopLen;
+
+            // Arpeggio (quieter, sparkly)
+            arpNotes.forEach((freq, i) => {
+                const t = melodyStart + i * arpDur;
+                if (t < now - 0.1) return;
+                const o = ctx.createOscillator();
+                o.type = 'sine';
+                o.frequency.value = freq;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.04, t + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, t + arpDur * 0.8);
+                o.connect(g); g.connect(master); g.connect(delay);
+                o.start(t); o.stop(t + arpDur);
+            });
+
+            // Rhythm
+            scheduleRhythm(melodyStart);
+
+            melodyStart += phraseLen;
         };
 
-        scheduleLoop();
+        schedulePhrase();
         this.bgmTimer = setInterval(() => {
-            if (ctx.currentTime > melodyStart - 1) scheduleLoop();
-        }, 500);
+            if (ctx.currentTime > melodyStart - 1.5) schedulePhrase();
+        }, 400);
 
-        this.bgmNodes = { master, oscs: [pad, padLfo, pad2] };
+        const allOscs = padOscs.flatMap(p => [p.osc, p.lfo]).concat([bass, bassLfo]);
+        this.bgmNodes = { master, oscs: allOscs, extras: [delay, feedback, wetGain] };
+    },
+    // Reaction jingles (play during answer reaction videos)
+    _reactionNodes: null,
+    playCorrectJingle(long) {
+        this.stopReactionJingle();
+        const ctx = this.getCtx();
+        this.resume();
+        const master = ctx.createGain();
+        master.gain.value = 0.30;
+        master.connect(ctx.destination);
+
+        // Big bright reverb
+        const dly = ctx.createDelay(); dly.delayTime.value = 0.15;
+        const dfb = ctx.createGain(); dfb.gain.value = 0.3;
+        const dwet = ctx.createGain(); dwet.gain.value = 0.4;
+        dly.connect(dfb); dfb.connect(dly); dly.connect(dwet); dwet.connect(master);
+
+        const t0 = ctx.currentTime;
+
+        // Helper: noise sparkle burst
+        const sparkle = (t, dur, vol) => {
+            const n = ctx.sampleRate * dur;
+            const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / n * 5);
+            const s = ctx.createBufferSource(); s.buffer = buf;
+            const hpf = ctx.createBiquadFilter(); hpf.type = 'highpass'; hpf.frequency.value = 6000;
+            const sg = ctx.createGain(); sg.gain.value = vol;
+            s.connect(hpf); hpf.connect(sg); sg.connect(master); sg.connect(dly);
+            s.start(t);
+        };
+
+        if (long) {
+            // === EPIC VICTORY: fast ascending fanfare + harmony + drum roll + sparkle cascade ===
+
+            // Drum roll build-up
+            for (let i = 0; i < 12; i++) {
+                const t = t0 + i * 0.06;
+                const kick = ctx.createOscillator(); kick.type = 'sine';
+                kick.frequency.setValueAtTime(60 + i * 5, t);
+                kick.frequency.exponentialRampToValueAtTime(30, t + 0.05);
+                const kg = ctx.createGain();
+                kg.gain.setValueAtTime(0.08 + i * 0.01, t);
+                kg.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+                kick.connect(kg); kg.connect(master);
+                kick.start(t); kick.stop(t + 0.06);
+            }
+
+            // Ascending fanfare melody with big sound
+            const notes = [523, 587, 659, 784, 880, 1047, 1319, 1568];
+            const dur = 0.2;
+            const fanfareStart = t0 + 0.2;
+            notes.forEach((f, i) => {
+                const t = fanfareStart + i * dur;
+                // Main (loud triangle)
+                const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.28, t);
+                g.gain.exponentialRampToValueAtTime(0.01, t + dur * 1.2);
+                o.connect(g); g.connect(master); g.connect(dly);
+                o.start(t); o.stop(t + dur * 1.2);
+                // Harmony 3rd above
+                const o2 = ctx.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 1.26;
+                const g2 = ctx.createGain();
+                g2.gain.setValueAtTime(0.12, t);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.8);
+                o2.connect(g2); g2.connect(master); g2.connect(dly);
+                o2.start(t); o2.stop(t + dur);
+                // Octave shimmer
+                const o3 = ctx.createOscillator(); o3.type = 'sine'; o3.frequency.value = f * 2;
+                const g3 = ctx.createGain();
+                g3.gain.setValueAtTime(0.06, t);
+                g3.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.6);
+                o3.connect(g3); g3.connect(master); g3.connect(dly);
+                o3.start(t); o3.stop(t + dur);
+                // Sparkle on every other note
+                if (i % 2 === 0) sparkle(t, 0.1, 0.06);
+            });
+
+            // GRAND VICTORY CHORD (C major spread + bright)
+            const chordT = fanfareStart + notes.length * dur;
+            [261, 330, 392, 523, 659, 784, 1047, 1568].forEach((f, i) => {
+                const o = ctx.createOscillator(); o.type = i < 4 ? 'triangle' : 'sine'; o.frequency.value = f;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.15, chordT);
+                g.gain.exponentialRampToValueAtTime(0.001, chordT + 1.5);
+                o.connect(g); g.connect(master); g.connect(dly);
+                o.start(chordT); o.stop(chordT + 1.5);
+            });
+
+            // Big sparkle cascade over chord
+            for (let i = 0; i < 5; i++) sparkle(chordT + i * 0.15, 0.15, 0.08);
+
+            // Celebration bass boom
+            const boom = ctx.createOscillator(); boom.type = 'sine';
+            boom.frequency.setValueAtTime(80, chordT);
+            boom.frequency.exponentialRampToValueAtTime(40, chordT + 0.3);
+            const boomG = ctx.createGain();
+            boomG.gain.setValueAtTime(0.25, chordT);
+            boomG.gain.exponentialRampToValueAtTime(0.001, chordT + 0.5);
+            boom.connect(boomG); boomG.connect(master);
+            boom.start(chordT); boom.stop(chordT + 0.5);
+
+        } else {
+            // === SHORT VICTORY: rapid rising + big chord ===
+            [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => {
+                const t = t0 + i * 0.07;
+                const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.28, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+                o.connect(g); g.connect(master); g.connect(dly);
+                o.start(t); o.stop(t + 0.2);
+            });
+            // Chord punch
+            const ct = t0 + 0.45;
+            [523, 659, 784, 1047].forEach(f => {
+                const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.2, ct);
+                g.gain.exponentialRampToValueAtTime(0.001, ct + 0.6);
+                o.connect(g); g.connect(master); g.connect(dly);
+                o.start(ct); o.stop(ct + 0.6);
+            });
+            sparkle(ct, 0.15, 0.1);
+        }
+        this._reactionNodes = { master, extras: [dly, dfb, dwet] };
+    },
+    playWrongJingle(long) {
+        this.stopReactionJingle();
+        const ctx = this.getCtx();
+        this.resume();
+        const master = ctx.createGain();
+        master.gain.value = 0.28;
+        master.connect(ctx.destination);
+
+        const t0 = ctx.currentTime;
+
+        // Helper: heavy impact noise
+        const impact = (t, dur, vol) => {
+            const n = ctx.sampleRate * dur;
+            const buf = ctx.createBuffer(1, n, ctx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / n * 3);
+            const s = ctx.createBufferSource(); s.buffer = buf;
+            const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 500;
+            const sg = ctx.createGain(); sg.gain.value = vol;
+            s.connect(lpf); lpf.connect(sg); sg.connect(master);
+            s.start(t);
+        };
+
+        if (long) {
+            // === DRAMATIC FAIL: dissonant crash + heavy descending + rumbling bass + tension ===
+
+            // Opening crash/impact
+            impact(t0, 0.5, 0.3);
+
+            // Dissonant stinger chord (minor 2nd cluster)
+            [233, 247, 311, 330].forEach(f => {
+                const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.12, t0);
+                g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.6);
+                o.connect(g); g.connect(master);
+                o.start(t0); o.stop(t0 + 0.6);
+            });
+
+            // Heavy descending melody with dissonance
+            const notes = [587, 523, 466, 415, 370, 330, 277, 233];
+            const dur = 0.25;
+            notes.forEach((f, i) => {
+                const t = t0 + 0.3 + i * dur;
+                // Dark sawtooth tone
+                const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+                const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 800;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.15, t);
+                g.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.9);
+                o.connect(lpf); lpf.connect(g); g.connect(master);
+                o.start(t); o.stop(t + dur);
+                // Detuned unison for thickness
+                const o2 = ctx.createOscillator(); o2.type = 'sawtooth'; o2.frequency.value = f * 1.015;
+                const g2 = ctx.createGain();
+                g2.gain.setValueAtTime(0.08, t);
+                g2.gain.exponentialRampToValueAtTime(0.001, t + dur * 0.7);
+                o2.connect(lpf); o2.start(t); o2.stop(t + dur);
+                // Impact hit on every other note
+                if (i % 2 === 0) impact(t, 0.15, 0.12);
+            });
+
+            // Deep rumbling bass throughout
+            const bass = ctx.createOscillator(); bass.type = 'sawtooth';
+            bass.frequency.setValueAtTime(55, t0);
+            bass.frequency.exponentialRampToValueAtTime(30, t0 + 3);
+            const bassLpf = ctx.createBiquadFilter(); bassLpf.type = 'lowpass'; bassLpf.frequency.value = 120;
+            const bassG = ctx.createGain();
+            bassG.gain.setValueAtTime(0.2, t0);
+            bassG.gain.exponentialRampToValueAtTime(0.001, t0 + 3);
+            bass.connect(bassLpf); bassLpf.connect(bassG); bassG.connect(master);
+            bass.start(t0); bass.stop(t0 + 3);
+
+            // Final doom chord
+            const doomT = t0 + 0.3 + notes.length * dur;
+            [65, 78, 98, 131, 156].forEach(f => {
+                const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+                const lpf2 = ctx.createBiquadFilter(); lpf2.type = 'lowpass'; lpf2.frequency.value = 300;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.12, doomT);
+                g.gain.exponentialRampToValueAtTime(0.001, doomT + 1.2);
+                o.connect(lpf2); lpf2.connect(g); g.connect(master);
+                o.start(doomT); o.stop(doomT + 1.2);
+            });
+            impact(doomT, 0.4, 0.25);
+
+        } else {
+            // === SHORT FAIL: quick crash + descending buzz + thud ===
+            impact(t0, 0.3, 0.25);
+
+            // Dissonant stab
+            [330, 349, 233].forEach(f => {
+                const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+                const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = 600;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0.15, t0);
+                g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.3);
+                o.connect(lpf); lpf.connect(g); g.connect(master);
+                o.start(t0); o.stop(t0 + 0.3);
+            });
+
+            // Fast descending buzz
+            const buzz = ctx.createOscillator(); buzz.type = 'sawtooth';
+            buzz.frequency.setValueAtTime(400, t0 + 0.1);
+            buzz.frequency.exponentialRampToValueAtTime(60, t0 + 0.5);
+            const bLpf = ctx.createBiquadFilter(); bLpf.type = 'lowpass'; bLpf.frequency.value = 500;
+            const bg = ctx.createGain();
+            bg.gain.setValueAtTime(0.2, t0 + 0.1);
+            bg.gain.exponentialRampToValueAtTime(0.001, t0 + 0.6);
+            buzz.connect(bLpf); bLpf.connect(bg); bg.connect(master);
+            buzz.start(t0 + 0.1); buzz.stop(t0 + 0.6);
+
+            // Heavy thud
+            const thud = ctx.createOscillator(); thud.type = 'sine';
+            thud.frequency.setValueAtTime(80, t0 + 0.4);
+            thud.frequency.exponentialRampToValueAtTime(25, t0 + 0.7);
+            const tg = ctx.createGain();
+            tg.gain.setValueAtTime(0.3, t0 + 0.4);
+            tg.gain.exponentialRampToValueAtTime(0.001, t0 + 0.8);
+            thud.connect(tg); tg.connect(master);
+            thud.start(t0 + 0.4); thud.stop(t0 + 0.8);
+            impact(t0 + 0.4, 0.2, 0.2);
+        }
+        this._reactionNodes = { master, extras: [] };
+    },
+    stopReactionJingle() {
+        if (!this._reactionNodes) return;
+        this._reactionNodes.master.disconnect();
+        this._reactionNodes.extras.forEach(n => { try { n.disconnect(); } catch(e) {} });
+        this._reactionNodes = null;
+    },
+    pauseBGM() {
+        if (!this.bgmNodes) return;
+        const ctx = this.getCtx();
+        this.bgmNodes.master.gain.cancelScheduledValues(ctx.currentTime);
+        this.bgmNodes.master.gain.setValueAtTime(this.bgmNodes.master.gain.value, ctx.currentTime);
+        this.bgmNodes.master.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+    },
+    resumeBGM() {
+        if (!this.bgmNodes) return;
+        const ctx = this.getCtx();
+        this.bgmNodes.master.gain.cancelScheduledValues(ctx.currentTime);
+        this.bgmNodes.master.gain.setValueAtTime(this.bgmNodes.master.gain.value, ctx.currentTime);
+        this.bgmNodes.master.gain.linearRampToValueAtTime(0.10, ctx.currentTime + 0.5);
     },
     stopBGM() {
         if (!this.bgmNodes) return;
         if (this.bgmTimer) { clearInterval(this.bgmTimer); this.bgmTimer = null; }
         this.bgmNodes.oscs.forEach(o => { try { o.stop(); } catch (e) {} });
+        if (this.bgmNodes.extras) this.bgmNodes.extras.forEach(n => { try { n.disconnect(); } catch (e) {} });
         this.bgmNodes.master.disconnect();
         this.bgmNodes = null;
+    },
+    // Title screen BGM: cheerful ocean adventure theme
+    titleBgmNodes: null,
+    titleBgmTimer: null,
+    startTitleBGM() {
+        if (this.titleBgmNodes) return;
+        const ctx = this.getCtx();
+        this.resume();
+
+        const master = ctx.createGain();
+        master.gain.value = 0.18;
+        master.connect(ctx.destination);
+
+        // Bright reverb
+        const delay = ctx.createDelay(); delay.delayTime.value = 0.18;
+        const fb = ctx.createGain(); fb.gain.value = 0.3;
+        const wet = ctx.createGain(); wet.gain.value = 0.35;
+        delay.connect(fb); fb.connect(delay);
+        delay.connect(wet); wet.connect(master);
+
+        // Cheerful pad (C major: C3 E3 G3 C4)
+        const padFreqs = [130.81, 164.81, 196, 261.63];
+        const padOscs = padFreqs.map((freq, i) => {
+            const o = ctx.createOscillator();
+            o.type = 'sine'; o.frequency.value = freq;
+            const g = ctx.createGain(); g.gain.value = 0.07;
+            const lfo = ctx.createOscillator();
+            lfo.type = 'sine'; lfo.frequency.value = 0.1 + i * 0.03;
+            const lfoG = ctx.createGain(); lfoG.gain.value = 2.5;
+            lfo.connect(lfoG); lfoG.connect(o.frequency);
+            o.connect(g); g.connect(master); g.connect(delay);
+            o.start(); lfo.start();
+            return { osc: o, lfo };
+        });
+
+        // Sub bass bounce
+        const bass = ctx.createOscillator();
+        bass.type = 'sine'; bass.frequency.value = 65.41;
+        const bassG = ctx.createGain(); bassG.gain.value = 0.1;
+        const bassLfo = ctx.createOscillator();
+        bassLfo.type = 'sine'; bassLfo.frequency.value = 0.5;
+        const bassLfoG = ctx.createGain(); bassLfoG.gain.value = 0.05;
+        bassLfo.connect(bassLfoG); bassLfoG.connect(bassG.gain);
+        bass.connect(bassG); bassG.connect(master);
+        bass.start(); bassLfo.start();
+
+        // Cheerful melody: C major pentatonic, bouncy rhythm
+        const phrases = [
+            // Phrase A: exciting rise
+            [523, 587, 659, 784, 880, 1047, 880, 784],
+            // Phrase B: playful bounce
+            [784, 659, 784, 880, 784, 659, 523, 659],
+            // Phrase C: triumphant peak
+            [880, 1047, 880, 784, 659, 784, 880, 1047],
+            // Phrase D: happy resolve
+            [784, 659, 523, 659, 784, 659, 523, 587],
+        ];
+        const noteDur = 0.28;
+        const phraseLen = 8 * noteDur;
+        let melodyStart = ctx.currentTime + 0.3;
+        let phraseIdx = 0;
+
+        // Sparkly arpeggio
+        const arpNotes = [1047, 1319, 1568, 1319, 1047, 1319, 1568, 1760];
+        const arpDur = 0.22;
+
+        // Bouncy rhythm: kick + clap pattern
+        const scheduleRhythm = (startTime) => {
+            for (let i = 0; i < 8; i++) {
+                const t = startTime + i * noteDur;
+                // Kick on 0, 2, 4, 6
+                if (i % 2 === 0) {
+                    const kick = ctx.createOscillator();
+                    kick.type = 'sine';
+                    kick.frequency.setValueAtTime(100, t);
+                    kick.frequency.exponentialRampToValueAtTime(40, t + 0.08);
+                    const kg = ctx.createGain();
+                    kg.gain.setValueAtTime(0.1, t);
+                    kg.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+                    kick.connect(kg); kg.connect(master);
+                    kick.start(t); kick.stop(t + 0.12);
+                }
+                // Snappy hi-hat on off-beats
+                if (i % 2 === 1) {
+                    const bufLen = ctx.sampleRate * 0.035;
+                    const buf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+                    const d = buf.getChannelData(0);
+                    for (let j = 0; j < bufLen; j++) d[j] = (Math.random() * 2 - 1) * Math.exp(-j / bufLen * 10);
+                    const hat = ctx.createBufferSource(); hat.buffer = buf;
+                    const hpf = ctx.createBiquadFilter();
+                    hpf.type = 'highpass'; hpf.frequency.value = 8000;
+                    const hg = ctx.createGain(); hg.gain.value = 0.05;
+                    hat.connect(hpf); hpf.connect(hg); hg.connect(master);
+                    hat.start(t);
+                }
+                // Clap on beat 3 and 7
+                if (i === 3 || i === 7) {
+                    const cLen = ctx.sampleRate * 0.06;
+                    const cBuf = ctx.createBuffer(1, cLen, ctx.sampleRate);
+                    const cd = cBuf.getChannelData(0);
+                    for (let j = 0; j < cLen; j++) cd[j] = (Math.random() * 2 - 1) * Math.exp(-j / cLen * 6);
+                    const clap = ctx.createBufferSource(); clap.buffer = cBuf;
+                    const bpf = ctx.createBiquadFilter();
+                    bpf.type = 'bandpass'; bpf.frequency.value = 2000; bpf.Q.value = 1.5;
+                    const cg = ctx.createGain(); cg.gain.value = 0.06;
+                    clap.connect(bpf); bpf.connect(cg); cg.connect(master);
+                    clap.start(t);
+                }
+            }
+        };
+
+        const schedulePhrase = () => {
+            const now = ctx.currentTime;
+            const phrase = phrases[phraseIdx % phrases.length];
+            phraseIdx++;
+
+            // Melody (triangle wave for warmth)
+            phrase.forEach((freq, i) => {
+                const t = melodyStart + i * noteDur;
+                if (t < now - 0.1) return;
+                const o = ctx.createOscillator();
+                o.type = 'triangle'; o.frequency.value = freq;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.18, t + 0.02);
+                g.gain.setValueAtTime(0.18, t + noteDur * 0.3);
+                g.gain.exponentialRampToValueAtTime(0.001, t + noteDur * 0.85);
+                o.connect(g); g.connect(master); g.connect(delay);
+                o.start(t); o.stop(t + noteDur);
+
+                // Octave sparkle on every other note
+                if (i % 2 === 0) {
+                    const o2 = ctx.createOscillator();
+                    o2.type = 'sine'; o2.frequency.value = freq * 2;
+                    const g2 = ctx.createGain();
+                    g2.gain.setValueAtTime(0.04, t);
+                    g2.gain.exponentialRampToValueAtTime(0.001, t + noteDur * 0.5);
+                    o2.connect(g2); g2.connect(master); g2.connect(delay);
+                    o2.start(t); o2.stop(t + noteDur);
+                }
+            });
+
+            // Arpeggio sparkle (higher, lighter)
+            arpNotes.forEach((freq, i) => {
+                const t = melodyStart + i * arpDur;
+                if (t < now - 0.1) return;
+                const o = ctx.createOscillator();
+                o.type = 'sine'; o.frequency.value = freq;
+                const g = ctx.createGain();
+                g.gain.setValueAtTime(0, t);
+                g.gain.linearRampToValueAtTime(0.05, t + 0.01);
+                g.gain.exponentialRampToValueAtTime(0.001, t + arpDur * 0.7);
+                o.connect(g); g.connect(master); g.connect(delay);
+                o.start(t); o.stop(t + arpDur);
+            });
+
+            // Rhythm
+            scheduleRhythm(melodyStart);
+            melodyStart += phraseLen;
+        };
+
+        schedulePhrase();
+        this.titleBgmTimer = setInterval(() => {
+            if (ctx.currentTime > melodyStart - 1.5) schedulePhrase();
+        }, 300);
+
+        const allOscs = padOscs.flatMap(p => [p.osc, p.lfo]).concat([bass, bassLfo]);
+        this.titleBgmNodes = { master, oscs: allOscs, extras: [delay, fb, wet] };
+    },
+    stopTitleBGM() {
+        if (!this.titleBgmNodes) return;
+        if (this.titleBgmTimer) { clearInterval(this.titleBgmTimer); this.titleBgmTimer = null; }
+        this.titleBgmNodes.oscs.forEach(o => { try { o.stop(); } catch (e) {} });
+        this.titleBgmNodes.extras.forEach(n => { try { n.disconnect(); } catch (e) {} });
+        this.titleBgmNodes.master.disconnect();
+        this.titleBgmNodes = null;
     }
 };
 
@@ -437,13 +1118,14 @@ const Game = {
     bindEvents() {
         document.getElementById('start-btn').addEventListener('click', () => {
             SoundGen.resume();
-            SoundGen.play('tap');
+            SoundGen.play('select');
             this.showCategorySelect();
         });
 
         document.querySelectorAll('.category-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                SoundGen.playClickSfx();
+                SoundGen.play('select');
+                SoundGen.play('whoosh');
                 this.startGame(btn.dataset.cat);
             });
         });
@@ -468,7 +1150,16 @@ const Game = {
             this.showCategorySelect();
         });
 
-        // Resume audio context on first user interaction
+        // Start title BGM on any user interaction (AudioContext requires gesture)
+        const tryStartTitleBGM = () => {
+            SoundGen.resume();
+            if (this.state === 'TITLE' || this.state === 'CATEGORY') {
+                SoundGen.startTitleBGM();
+            }
+        };
+        // Listen on title screen and whole document for first interaction
+        document.getElementById('title-screen').addEventListener('click', tryStartTitleBGM);
+        document.getElementById('title-screen').addEventListener('touchstart', tryStartTitleBGM);
         document.addEventListener('click', () => SoundGen.resume(), { once: true });
         document.addEventListener('touchstart', () => SoundGen.resume(), { once: true });
     },
@@ -489,6 +1180,7 @@ const Game = {
     goTitle() {
         this.state = 'TITLE';
         showScreen('title-screen');
+        // Title BGM will start on first user click (AudioContext needs interaction)
 
         // Play intro video
         VideoManager.play(this.videos.intro, {
@@ -505,6 +1197,8 @@ const Game = {
     showCategorySelect() {
         this.state = 'CATEGORY';
         showScreen('category-screen');
+        SoundGen.stopBGM();
+        SoundGen.startTitleBGM();
 
         // Update question counts
         const cats = { restoration: 0, ecology: 0, aquaculture: 0 };
@@ -539,6 +1233,7 @@ const Game = {
             };
         });
 
+        SoundGen.stopTitleBGM();
         SoundGen.startBGM();
         this.showQuiz();
     },
@@ -551,6 +1246,7 @@ const Game = {
 
         this.state = 'QUIZ';
         this.answered = false;
+        SoundGen.resumeBGM();
         const q = this.shuffledQuestions[this.currentIndex];
 
         // Play background loop
@@ -593,6 +1289,8 @@ const Game = {
             this.updateTimerDisplay();
 
             if (this.timeLeft <= 3) {
+                SoundGen.play('countdown');
+            } else if (this.timeLeft <= 5) {
                 SoundGen.play('tick');
             }
 
@@ -654,13 +1352,19 @@ const Game = {
 
     playReaction(isCorrect) {
         this.state = 'REACTING';
-        let videoUrl;
+        SoundGen.pauseBGM();
 
         const pick = arr => arr[Math.floor(Math.random() * arr.length)];
-        if (this.timeLeft >= 7) {
-            videoUrl = pick(isCorrect ? this.videos.correct7s : this.videos.wrong7s);
+        const long = this.timeLeft >= 7;
+        const videoUrl = long
+            ? pick(isCorrect ? this.videos.correct7s : this.videos.wrong7s)
+            : pick(isCorrect ? this.videos.correct3s : this.videos.wrong3s);
+
+        // Play reaction jingle matching video length
+        if (isCorrect) {
+            SoundGen.playCorrectJingle(long);
         } else {
-            videoUrl = pick(isCorrect ? this.videos.correct3s : this.videos.wrong3s);
+            SoundGen.playWrongJingle(long);
         }
 
         // Hide question/answer boxes so reaction video is fully visible
@@ -668,6 +1372,7 @@ const Game = {
         VideoManager.play(videoUrl, {
             loop: false,
             onEnded: () => {
+                SoundGen.stopReactionJingle();
                 VideoManager.freeze();
                 this.showExplanation(isCorrect);
             }
@@ -680,7 +1385,9 @@ const Game = {
         clearInterval(this.timerInterval);
 
         this.streak = 0;
+        SoundGen.pauseBGM();
         SoundGen.play('timesup');
+        SoundGen.playWrongJingle(true);
 
         // Highlight correct answer
         const q = this.shuffledQuestions[this.currentIndex];
@@ -694,6 +1401,7 @@ const Game = {
         VideoManager.play(this.videos.timesup, {
             loop: false,
             onEnded: () => {
+                SoundGen.stopReactionJingle();
                 VideoManager.freeze();
                 this.showExplanation(false);
             }
