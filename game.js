@@ -386,9 +386,9 @@ const Game = {
         await this.loadQuestions();
         await this.loadVideoList();
 
-        // Preload videos
-        const allVideos = this.getAllVideoUrls();
-        const totalAssets = allVideos.length + 1; // +1 for title bg image
+        // 只預載必要的影片（開頭+背景），其他邊玩邊載
+        const essentialVideos = [this.videos.intro, this.videos.bgLoop];
+        const totalAssets = essentialVideos.length + 1; // +1 for title bg image
         let loadedCount = 0;
 
         const updateProgress = (loaded, total, name) => {
@@ -399,22 +399,23 @@ const Game = {
             document.getElementById('loading-text').textContent = `載入中... ${shortName} (${pct}%)`;
         };
 
-        // Preload title image (cache bust)
+        // Preload title image
         const titleImg = new Image();
         titleImg.src = this.images.titleBg + '?t=' + Date.now();
         titleImg.onload = () => updateProgress(1, 1, this.images.titleBg);
         titleImg.onerror = () => updateProgress(1, 1, this.images.titleBg);
 
-        await VideoManager.preload(allVideos, updateProgress);
-
-        // Wait a moment for image
-        await new Promise(r => setTimeout(r, 300));
+        await VideoManager.preload(essentialVideos, updateProgress);
 
         document.getElementById('progress-fill').style.width = '100%';
         document.getElementById('loading-text').textContent = '載入完成！';
 
         await new Promise(r => setTimeout(r, 500));
         this.goTitle();
+
+        // 背景預載其他影片（不阻擋遊戲開始）
+        const otherVideos = this.getAllVideoUrls().filter(u => !essentialVideos.includes(u));
+        VideoManager.preload(otherVideos, () => {});
     },
 
     async loadQuestions() {
