@@ -338,6 +338,7 @@ const Game = {
     async loadVideoList() {
         try {
             const resp = await fetch('/api/videos');
+            if (!resp.ok) throw new Error('API not available');
             const data = await resp.json();
             this.videos.correct7s = data.correct7s || [];
             this.videos.wrong7s = data.wrong7s || [];
@@ -345,9 +346,18 @@ const Game = {
             this.videos.wrong3s = data.wrong3s || [];
             console.log(`影片掃描: 答對7秒×${this.videos.correct7s.length}, 答錯7秒×${this.videos.wrong7s.length}, 答對3秒×${this.videos.correct3s.length}, 答錯3秒×${this.videos.wrong3s.length}`);
         } catch (e) {
-            console.warn('無法載入影片清單，使用預設值', e);
-            this.videos.correct7s = ['assets/video/7秒_答對1.mp4'];
-            this.videos.wrong7s = ['assets/video/7秒_答錯1.mp4'];
+            // 靜態託管（如 GitHub Pages）沒有 API，用完整預設清單
+            console.log('使用預設影片清單（靜態模式）');
+            this.videos.correct7s = [
+                'assets/video/7秒_答對1.mp4', 'assets/video/7秒_答對2.mp4',
+                'assets/video/7秒_答對3.mp4', 'assets/video/7秒_答對4.mp4',
+                'assets/video/7秒_答對5.mp4', 'assets/video/7秒_答對6.mp4',
+            ];
+            this.videos.wrong7s = [
+                'assets/video/7秒_答錯1.mp4', 'assets/video/7秒_答錯2.mp4',
+                'assets/video/7秒_答錯3.mp4', 'assets/video/7秒_答錯4.mp4',
+                'assets/video/7秒_答錯5.mp4',
+            ];
             this.videos.correct3s = ['assets/video/3秒_答對.mp4'];
             this.videos.wrong3s = ['assets/video/3秒_答錯.mp4'];
         }
