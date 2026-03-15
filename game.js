@@ -472,12 +472,10 @@ const Game = {
         const scaleY = window.innerHeight / GAME_H;
         const scale = Math.min(scaleX, scaleY);
         vp.style.transform = `scale(${scale})`;
-        vp.style.transformOrigin = 'top center';
-        // Center vertically
-        const top = Math.max(0, (window.innerHeight - GAME_H * scale) / 2);
+        vp.style.transformOrigin = 'top left';
         vp.style.position = 'absolute';
         vp.style.left = `${(window.innerWidth - GAME_W * scale) / 2}px`;
-        vp.style.top = `${top}px`;
+        vp.style.top = `${(window.innerHeight - GAME_H * scale) / 2}px`;
     },
 
     // ── State transitions ──
