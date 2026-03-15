@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+OceanQuiz_Standalone.html
+phaser.min.js
+*.zip

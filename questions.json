@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "categories": [
+    { "id": "aquaculture", "name": "水產養殖", "color": "#4ECDC4" },
+    { "id": "ecology",     "name": "海洋生態", "color": "#FF6B6B" },
+    { "id": "fishery",     "name": "漁業管理", "color": "#45B7D1" },
+    { "id": "restoration", "name": "資源復育", "color": "#96CEB4" }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "category": "restoration",
+      "difficulty": 1,
+      "timeLimit": 20,
+      "question": "放流魚苗前，為什麼需要先進行「馴化」？",
+      "choices": ["讓魚苗習慣人類", "讓魚苗逐漸適應野外環境", "增加魚苗體重", "測試魚苗品種"],
+      "answer": 1,
+      "explanation": "馴化是讓人工繁殖的魚苗逐漸適應自然環境的過程，包括水溫、鹽度和天然食物的適應，提高放流後的存活率。",
+      "funFact": "台灣每年放流超過數百萬尾魚苗！"
+    },
+    {
+      "id": 2,
+      "category": "ecology",
+      "difficulty": 1,
+      "timeLimit": 20,
+      "question": "珊瑚礁被稱為什麼？",
+      "choices": ["海洋的肺", "海洋的熱帶雨林", "海洋的沙漠", "海洋的心臟"],
+      "answer": 1,
+      "explanation": "珊瑚礁雖然只佔海洋面積不到1%，卻孕育了約25%的海洋生物種類，生物多樣性堪比陸地上的熱帶雨林。",
+      "funFact": "全球最大的珊瑚礁系統是澳洲大堡礁，長達2,300公里！"
+    },
+    {
+      "id": 3,
+      "category": "aquaculture",
+      "difficulty": 1,
+      "timeLimit": 20,
+      "question": "台灣養殖產量最高的魚種是哪一種？",
+      "choices": ["鮭魚", "吳郭魚（台灣鯛）", "石斑魚", "鰻魚"],
+      "answer": 1,
+      "explanation": "吳郭魚（台灣鯛）是台灣養殖產量最大的魚種，年產量超過6萬公噸，也是重要的外銷水產品。",
+      "funFact": "台灣鯛的名稱是為了提升吳郭魚的品牌形象而取的！"
+    },
+    {
+      "id": 4,
+      "category": "fishery",
+      "difficulty": 1,
+      "timeLimit": 20,
+      "question": "「禁漁期」的主要目的是什麼？",
+      "choices": ["讓漁民放假", "保護魚類繁殖期，讓族群恢復", "節省燃油成本", "等待魚價上漲"],
+      "answer": 1,
+      "explanation": "禁漁期通常設在魚類的繁殖季節，讓親魚有機會順利產卵繁殖，維持漁業資源的永續利用。",
+      "funFact": "台灣的飛魚卵（飛魚子）漁業每年有嚴格的禁漁期管理！"
+    },
+    {
+      "id": 5,
+      "category": "restoration",
+      "difficulty": 2,
+      "timeLimit": 25,
+      "question": "人工魚礁的主要功能是什麼？",
+      "choices": ["阻擋船隻航行", "提供海洋生物棲息和庇護場所", "過濾海水污染物", "增加海底地形高度"],
+      "answer": 1,
+      "explanation": "人工魚礁投放至海底後，能形成複雜的立體結構，為魚類和其他海洋生物提供棲息、覓食和繁殖的場所。",
+      "funFact": "台灣從1973年就開始投放人工魚礁，已累計投放超過2萬座！"
+    },
+    {
+      "id": 6,
+      "category": "ecology",
+      "difficulty": 2,
+      "timeLimit": 25,
+      "question": "海草床對海洋生態最重要的功能之一是什麼？",
+      "choices": ["製造海浪", "作為幼魚的育幼場", "產生電力", "製造食鹽"],
+      "answer": 1,
+      "explanation": "海草床是許多魚蝦蟹貝類幼生的育幼場，提供食物來源和躲避天敵的庇護所，同時也能固碳和穩定海底沉積物。",
+      "funFact": "海草的固碳效率是陸地森林的35倍，被稱為「藍碳」！"
+    },
+    {
+      "id": 7,
+      "category": "aquaculture",
+      "difficulty": 2,
+      "timeLimit": 25,
+      "question": "水產養殖中，什麼是「換水率」？",
+      "choices": ["魚的飲水速度", "養殖池每日更換水量的比例", "海水鹽度變化率", "魚的排泄速率"],
+      "answer": 1,
+      "explanation": "換水率是指每日更換的水量佔總水量的比例，適當的換水率能維持水質、移除廢物，是養殖管理的重要指標。",
+      "funFact": "循環水養殖系統（RAS）可將換水率降至每日僅1-5%！"
+    },
+    {
+      "id": 8,
+      "category": "fishery",
+      "difficulty": 2,
+      "timeLimit": 25,
+      "question": "「最小體長限制」是為了確保什麼？",
+      "choices": ["捕到的魚比較好看", "魚至少繁殖過一次再被捕撈", "漁網不會太密", "魚的肉質比較好"],
+      "answer": 1,
+      "explanation": "設定最小體長限制，是為了確保魚類在被捕撈前至少達到性成熟、完成一次繁殖，讓族群能自我補充。",
+      "funFact": "不同魚種的性成熟體長差異很大，黑鮪魚要到3歲以上才性成熟！"
+    },
+    {
+      "id": 9,
+      "category": "restoration",
+      "difficulty": 1,
+      "timeLimit": 20,
+      "question": "「栽培漁業」的核心概念是什麼？",
+      "choices": ["在陸地上種魚", "人工繁殖放流增加野生族群量", "用化學藥劑增產", "只捕撈養殖魚類"],
+      "answer": 1,
+      "explanation": "栽培漁業是透過人工繁殖種苗，經過中間育成後放流到天然水域，補充野生族群數量的漁業管理策略。",
+      "funFact": "日本是栽培漁業的先驅，從1960年代就開始大規模實施！"
+    },
+    {
+      "id": 10,
+      "category": "ecology",
+      "difficulty": 2,
+      "timeLimit": 25,
+      "question": "造成珊瑚白化的最主要原因是什麼？",
+      "choices": ["酸雨", "海水溫度異常升高", "漁船噪音", "月光照射"],
+      "answer": 1,
+      "explanation": "當海水溫度持續高於正常值1-2°C時，珊瑚會排出體內的共生藻，失去顏色而變白，若高溫持續過久珊瑚就會死亡。",
+      "funFact": "2016年大堡礁經歷史上最嚴重的白化事件，約29%的珊瑚死亡！"
+    }
+  ]
+}

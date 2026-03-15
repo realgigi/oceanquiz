@@ -1,0 +1,503 @@
+/* ============================================================
+   海洋知識大挑戰 - Ocean Quiz  (Video-driven version)
+   ============================================================ */
+
+/* ── Reset & base ── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    background: #0a1628;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'Microsoft JhengHei', 'Noto Sans TC', sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+/* ── Game viewport (720×1280 logical, scales to fit) ── */
+#game-viewport {
+    position: relative;
+    width: 720px;
+    height: 1280px;
+    overflow: hidden;
+    background: #0a1628;
+}
+
+/* ── Video layer ── */
+#video-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+#video-layer video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.4s ease;
+}
+
+/* ── UI layer ── */
+#ui-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+}
+
+#ui-layer > * {
+    pointer-events: auto;
+}
+
+/* ── Screens ── */
+.screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* ── Loading screen ── */
+#loading-screen {
+    justify-content: center;
+    background: #0a1628;
+    z-index: 100;
+}
+
+.loading-title {
+    color: #7ec8e3;
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 40px;
+    text-shadow: 0 0 20px rgba(126, 200, 227, 0.5);
+}
+
+.progress-bar-container {
+    width: 480px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid rgba(126, 200, 227, 0.3);
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #4ecdc4, #7ec8e3, #45b7d1);
+    border-radius: 12px;
+    transition: width 0.3s ease;
+}
+
+.loading-text {
+    color: #7ec8e3;
+    font-size: 16px;
+    margin-top: 16px;
+    opacity: 0.8;
+}
+
+/* ── Title screen ── */
+#title-screen {
+    justify-content: flex-end;
+    align-items: center;
+    padding-bottom: 80px;
+}
+
+#title-bg-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: none;
+}
+
+/* 原圖 1536×2752 cover → 720×1280，按鈕中心 ≈ bottom 140px */
+#start-btn {
+    position: absolute;
+    bottom: 96px;
+    width: 360px;
+    height: 96px;
+    background: url('assets/video/開頭影片點擊框.png') center/contain no-repeat;
+    cursor: pointer;
+    z-index: 5;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+#start-btn:hover {
+    transform: scale(1.05);
+    filter: brightness(1.15);
+}
+
+#start-btn:active {
+    transform: scale(0.97);
+}
+
+/* ── Quiz screen ── */
+#quiz-screen {
+    display: none;
+}
+
+#quiz-screen.active {
+    display: block;
+}
+
+/* Score & timer boxes */
+.top-bar {
+    position: absolute;
+    top: 8px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 15;
+}
+
+.info-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#score-box {
+    width: 280px;
+    height: 112px;
+    background: url('assets/video/分數框.png') center/contain no-repeat;
+    opacity: 0.85;
+}
+
+#timer-box {
+    width: 280px;
+    height: 110px;
+    background: url('assets/video/時間框.png') center/contain no-repeat;
+    opacity: 0.85;
+}
+
+.info-box-text {
+    font-size: 36px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    padding-top: 16px;
+}
+
+#timer-text.warning {
+    color: #ff6b6b;
+    animation: pulse-warning 0.5s ease infinite alternate;
+}
+
+@keyframes pulse-warning {
+    from { transform: scale(1); }
+    to { transform: scale(1.15); }
+}
+
+/* Question box */
+#question-box {
+    position: absolute;
+    top: 128px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 680px;
+    height: 306px;
+    background: url('assets/video/問題框.png') center/contain no-repeat;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 50px;
+}
+
+#question-text {
+    font-size: 32px;
+    font-weight: bold;
+    color: #111;
+    text-align: center;
+    -webkit-text-stroke: 1.2px #fff;
+    text-shadow:
+        -1px -1px 0 #fff, 1px -1px 0 #fff,
+        -1px  1px 0 #fff, 1px  1px 0 #fff,
+         0 0 6px rgba(255, 255, 255, 0.6);
+    paint-order: stroke fill;
+    line-height: 1.5;
+    word-break: break-word;
+    max-width: 580px;
+    max-height: 220px;
+    overflow: hidden;
+}
+
+/* Answer boxes */
+.answer-btn {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.85;
+    transition: transform 0.12s ease, opacity 0.12s ease, filter 0.12s ease;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    padding: 20px 50px;
+}
+
+.answer-btn:hover {
+    transform: translateX(-50%) scale(1.03);
+    opacity: 1;
+    filter: brightness(1.1);
+}
+
+.answer-btn:active {
+    transform: translateX(-50%) scale(0.97);
+}
+
+.answer-btn.disabled {
+    pointer-events: none;
+}
+
+.answer-btn.correct {
+    filter: brightness(1.3) hue-rotate(-10deg);
+    opacity: 1;
+}
+
+.answer-btn.wrong {
+    filter: brightness(0.6) grayscale(0.5);
+    opacity: 0.7;
+}
+
+#answer-0 {
+    top: 452px;
+    width: 660px;
+    height: 148px;
+    background: url('assets/video/答案框1.png') center/contain no-repeat;
+}
+
+#answer-1 {
+    top: 612px;
+    width: 660px;
+    height: 142px;
+    background: url('assets/video/答案框2.png') center/contain no-repeat;
+}
+
+#answer-2 {
+    top: 766px;
+    width: 660px;
+    height: 145px;
+    background: url('assets/video/答案框3.png') center/contain no-repeat;
+}
+
+#answer-3 {
+    top: 920px;
+    width: 660px;
+    height: 145px;
+    background: url('assets/video/答案框4.png') center/contain no-repeat;
+}
+
+.answer-text {
+    font-size: 28px;
+    font-weight: bold;
+    color: #111;
+    text-align: center;
+    -webkit-text-stroke: 1.2px #fff;
+    text-shadow:
+        -1px -1px 0 #fff, 1px -1px 0 #fff,
+        -1px  1px 0 #fff, 1px  1px 0 #fff,
+         0 0 6px rgba(255, 255, 255, 0.6);
+    paint-order: stroke fill;
+    line-height: 1.4;
+    word-break: break-word;
+    max-width: 560px;
+    max-height: 100px;
+    overflow: hidden;
+}
+
+/* ── Explanation overlay ── */
+#explanation-overlay {
+    justify-content: center;
+    z-index: 20;
+    background: rgba(0, 10, 30, 0.55);
+}
+
+#explanation-frame {
+    position: relative;
+    width: 660px;
+    max-height: 1100px;
+    background: linear-gradient(170deg, rgba(10, 60, 100, 0.92) 0%, rgba(6, 30, 60, 0.95) 100%);
+    border: 3px solid rgba(100, 200, 255, 0.4);
+    border-radius: 32px;
+    box-shadow:
+        0 0 40px rgba(40, 140, 220, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 48px 36px;
+    cursor: pointer;
+}
+
+/* 裝飾：頂部亮線 */
+#explanation-frame::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 60px;
+    right: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(100, 220, 255, 0.6), transparent);
+    border-radius: 2px;
+}
+
+#explanation-result {
+    font-size: 44px;
+    font-weight: bold;
+    color: #4ecdc4;
+    margin-bottom: 28px;
+    text-shadow: 0 0 20px rgba(78, 205, 196, 0.4);
+}
+
+#explanation-result.wrong-result {
+    color: #ff6b6b;
+    text-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+}
+
+#explanation-text {
+    font-size: 30px;
+    color: #eaf6ff;
+    text-align: center;
+    line-height: 1.8;
+    word-break: break-word;
+    max-width: 560px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+#explanation-funfact {
+    margin-top: 28px;
+    font-size: 25px;
+    color: #f9d423;
+    text-align: center;
+    line-height: 1.7;
+    word-break: break-word;
+    max-width: 560px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+#explanation-continue {
+    margin-top: 32px;
+    font-size: 22px;
+    color: rgba(180, 220, 255, 0.5);
+    animation: blink 1.5s ease infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+/* ── End screen ── */
+#end-screen {
+    justify-content: center;
+    align-items: center;
+    background: rgba(10, 22, 40, 0.85);
+    z-index: 20;
+}
+
+.end-title {
+    font-size: 42px;
+    font-weight: bold;
+    color: #f9d423;
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.5);
+    margin-bottom: 24px;
+}
+
+.end-rank {
+    font-size: 30px;
+    color: #7ec8e3;
+    margin-bottom: 32px;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.end-score {
+    font-size: 64px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 2px 2px 8px rgba(78, 205, 196, 0.5);
+    margin-bottom: 12px;
+}
+
+.end-detail {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 40px;
+}
+
+#restart-btn {
+    width: 300px;
+    height: 70px;
+    background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+    border: none;
+    border-radius: 35px;
+    color: #fff;
+    font-size: 26px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.4);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#restart-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(78, 205, 196, 0.6);
+}
+
+#restart-btn:active {
+    transform: scale(0.97);
+}
+
+/* ── Fade transitions ── */
+.fade-in {
+    animation: fadeIn 0.4s ease forwards;
+}
+
+.fade-out {
+    animation: fadeOut 0.4s ease forwards;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ── Answer pop-in ── */
+.answer-pop-in {
+    animation: popIn 0.3s ease forwards;
+}
+
+@keyframes popIn {
+    0% { opacity: 0; transform: translateX(-50%) scale(0.8) translateY(20px); }
+    100% { opacity: 0.85; transform: translateX(-50%) scale(1) translateY(0); }
+}

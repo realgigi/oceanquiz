@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>白貓博士的海洋復育行動 - 益智問答遊戲</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-viewport">
+        <!-- Video layer: dual video for crossfade -->
+        <div id="video-layer">
+            <video id="bg-video-a" muted playsinline></video>
+            <video id="bg-video-b" muted playsinline style="opacity:0"></video>
+        </div>
+
+        <!-- UI layer -->
+        <div id="ui-layer">
+            <!-- Loading screen -->
+            <div id="loading-screen" class="screen active">
+                <div class="loading-title">🐱 白貓博士的海洋復育行動</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <div class="loading-text" id="loading-text">載入中...</div>
+            </div>
+
+            <!-- Title screen -->
+            <div id="title-screen" class="screen">
+                <img id="title-bg-image" src="" alt="">
+                <button id="start-btn" aria-label="開始遊戲"></button>
+            </div>
+
+            <!-- Quiz screen -->
+            <div id="quiz-screen" class="screen">
+                <div class="top-bar">
+                    <div id="score-box" class="info-box">
+                        <span class="info-box-text" id="score-text">0</span>
+                    </div>
+                    <div id="timer-box" class="info-box">
+                        <span class="info-box-text" id="timer-text">10</span>
+                    </div>
+                </div>
+                <div id="question-box">
+                    <span id="question-text"></span>
+                </div>
+                <button id="answer-0" class="answer-btn" data-idx="0">
+                    <span class="answer-text"></span>
+                </button>
+                <button id="answer-1" class="answer-btn" data-idx="1">
+                    <span class="answer-text"></span>
+                </button>
+                <button id="answer-2" class="answer-btn" data-idx="2">
+                    <span class="answer-text"></span>
+                </button>
+                <button id="answer-3" class="answer-btn" data-idx="3">
+                    <span class="answer-text"></span>
+                </button>
+            </div>
+
+            <!-- Explanation overlay -->
+            <div id="explanation-overlay" class="screen">
+                <div id="explanation-frame">
+                    <div id="explanation-result"></div>
+                    <div id="explanation-text"></div>
+                    <div id="explanation-funfact"></div>
+                    <div id="explanation-continue">點擊繼續</div>
+                </div>
+            </div>
+
+            <!-- End screen -->
+            <div id="end-screen" class="screen">
+                <div class="end-title">遊戲結束</div>
+                <div class="end-rank" id="end-rank"></div>
+                <div class="end-score" id="end-score"></div>
+                <div class="end-detail" id="end-detail"></div>
+                <button id="restart-btn">再玩一次</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
