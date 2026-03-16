@@ -891,9 +891,8 @@ const VideoManager = {
     async preload(urls, onProgress) {
         let loaded = 0;
         const total = urls.length;
-        const bustCache = url => url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
         const promises = urls.map(url =>
-            fetch(bustCache(url), { cache: 'no-store' }).then(r => r.blob()).then(blob => {
+            fetch(url).then(r => r.blob()).then(blob => {
                 this.cache[url] = URL.createObjectURL(blob);
                 loaded++;
                 if (onProgress) onProgress(loaded, total, url);
@@ -1082,7 +1081,7 @@ const Game = {
 
         // Preload title image
         const titleImg = new Image();
-        titleImg.src = this.images.titleBg + '?t=' + Date.now();
+        titleImg.src = this.images.titleBg;
         titleImg.onload = () => updateProgress(1, 1, this.images.titleBg);
         titleImg.onerror = () => updateProgress(1, 1, this.images.titleBg);
 
