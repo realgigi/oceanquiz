@@ -1012,7 +1012,7 @@ const Game = {
     },
 
     images: {
-        titleBg: 'assets/video/開頭影片圖檔.png',
+        titleBg: 'assets/video/title-bg.webp',
     },
 
     getDefaultVideoList() {

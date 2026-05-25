@@ -132,7 +132,7 @@ body {
     bottom: 96px;
     width: 360px;
     height: 96px;
-    background-image: url('assets/video/開頭影片點擊框.png'), linear-gradient(135deg, rgba(130, 235, 255, 0.8), rgba(90, 150, 255, 0.78));
+    background-image: url('assets/video/start-button.webp'), linear-gradient(135deg, rgba(130, 235, 255, 0.8), rgba(90, 150, 255, 0.78));
     background-position: center, center;
     background-size: contain, 100% 100%;
     background-repeat: no-repeat, no-repeat;
