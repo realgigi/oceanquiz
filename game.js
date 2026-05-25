@@ -1133,21 +1133,63 @@ const Game = {
         this.handleResize();
         window.addEventListener('resize', () => this.handleResize());
 
-        // Load questions + scan video folder
+        const setProgress = (pct, msg) => {
+            document.getElementById('progress-fill').style.width = pct + '%';
+            if (msg) document.getElementById('loading-text').textContent = msg;
+        };
+
+        // Step 1: 題庫 + 影片清單
+        setProgress(5, '載入題庫…');
         await this.loadQuestions();
         await this.loadVideoList();
 
-        // 標題圖片較大，改為背景載入，避免線上等待圖片時看不到開始按鈕。
+        // Step 2: 必載影片（進標題前必須完成）—— intro + bgLoop + timesup + ending
+        const critical = [
+            this.videos.intro,
+            this.videos.bgLoop,
+            this.videos.timesup,
+            this.videos.ending,
+        ];
+        setProgress(10, `載入影片 0/${critical.length}…`);
+        await VideoManager.preload(critical, (loaded, total) => {
+            const pct = 10 + Math.round((loaded / total) * 75);
+            setProgress(pct, `載入影片 ${loaded}/${total}…`);
+        });
+
+        // 標題圖片
         document.getElementById('title-bg-image').src = this.images.titleBg;
 
-        document.getElementById('progress-fill').style.width = '100%';
-        document.getElementById('loading-text').textContent = '載入完成！';
-        await new Promise(r => setTimeout(r, 300));
+        setProgress(95, '快好了…');
+        await new Promise(r => setTimeout(r, 200));
+        setProgress(100, '載入完成！');
+        await new Promise(r => setTimeout(r, 200));
         this.goTitle();
 
-        // 背景預載所有影片（不阻擋遊戲，邊玩邊載）
-        const allVideos = this.getAllVideoUrls();
-        VideoManager.preload(allVideos, () => {});
+        // Step 3: 背景預載第一波反應影片（前 5 題用）
+        const wave1 = [
+            ...this.getFirstHalf(this.videos.correct7s),
+            ...this.getFirstHalf(this.videos.wrong7s),
+            ...this.videos.correct3s,
+            ...this.videos.wrong3s,
+        ];
+        await VideoManager.preload(wave1, () => {});
+
+        // Step 4: 背景預載第二波（後 5 題用）
+        const wave2 = [
+            ...this.getSecondHalf(this.videos.correct7s),
+            ...this.getSecondHalf(this.videos.wrong7s),
+        ];
+        VideoManager.preload(wave2, () => {});
+    },
+
+    getFirstHalf(arr) {
+        const mid = Math.ceil(arr.length / 2);
+        return arr.slice(0, mid);
+    },
+
+    getSecondHalf(arr) {
+        const mid = Math.ceil(arr.length / 2);
+        return arr.slice(mid);
     },
 
     async loadQuestions() {
@@ -1454,8 +1496,13 @@ const Game = {
 
         const pick = arr => arr[Math.floor(Math.random() * arr.length)];
         const long = this.timeLeft >= 7;
+        // 前 5 題從第一池抽，後 5 題從第二池抽 — 配合背景下載順序
+        const total = this.shuffledQuestions.length;
+        const isFirstHalf = this.currentIndex < Math.ceil(total / 2);
+        const pool7 = (isCorrect ? this.videos.correct7s : this.videos.wrong7s);
+        const pool7sub = isFirstHalf ? this.getFirstHalf(pool7) : this.getSecondHalf(pool7);
         const videoUrl = long
-            ? pick(isCorrect ? this.videos.correct7s : this.videos.wrong7s)
+            ? pick(pool7sub.length ? pool7sub : pool7)
             : pick(isCorrect ? this.videos.correct3s : this.videos.wrong3s);
 
         // Play reaction jingle matching video length

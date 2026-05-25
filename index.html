@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>白貓博士的海洋復育行動 - 益智問答遊戲</title>
     <link rel="stylesheet" href="style.css">
+
+    <!-- 早期預載：HTML 一拿到就開始抓題庫和必載影片，與 JS 平行 -->
+    <link rel="preload" href="questions.json" as="fetch" crossorigin="anonymous">
+    <link rel="preload" href="assets/video/開頭影片.mp4" as="fetch" type="video/mp4" crossorigin="anonymous">
+    <link rel="preload" href="assets/video/十秒背景.mp4" as="fetch" type="video/mp4" crossorigin="anonymous">
+    <link rel="preload" href="assets/video/title-bg.webp" as="image">
+    <link rel="preload" href="assets/video/start-button.webp" as="image">
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-QWZV3TW3N8"></script>
     <script>
@@ -92,7 +99,7 @@
                 <button id="start-btn" aria-label="開始遊戲">開始遊戲</button>
                 <button id="title-leaderboard-btn" aria-label="查看排行榜">🏆 排行榜</button>
                 <div class="title-footer">
-                    <div class="title-version">v1.9 (20260526)</div>
+                    <div class="title-version">v2.0 (20260526)</div>
                     <div class="title-disclaimer">資訊可能有誤，請協助回報</div>
                 </div>
             </div>
