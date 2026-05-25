@@ -292,14 +292,14 @@ body {
 #score-box {
     width: 280px;
     height: 112px;
-    background: url('assets/video/分數框.png') center/contain no-repeat;
+    background: url('assets/video/分數框.webp') center/contain no-repeat;
     opacity: 0.85;
 }
 
 #timer-box {
     width: 280px;
     height: 110px;
-    background: url('assets/video/時間框.png') center/contain no-repeat;
+    background: url('assets/video/時間框.webp') center/contain no-repeat;
     opacity: 0.85;
 }
 
@@ -329,7 +329,7 @@ body {
     transform: translateX(-50%);
     width: 680px;
     height: 306px;
-    background: url('assets/video/問題框.png') center/contain no-repeat;
+    background: url('assets/video/問題框.webp') center/contain no-repeat;
     opacity: 0.85;
     display: flex;
     align-items: center;
@@ -400,28 +400,28 @@ body {
     top: 452px;
     width: 660px;
     height: 148px;
-    background: url('assets/video/答案框1.png') center/contain no-repeat;
+    background: url('assets/video/答案框1.webp') center/contain no-repeat;
 }
 
 #answer-1 {
     top: 612px;
     width: 660px;
     height: 142px;
-    background: url('assets/video/答案框2.png') center/contain no-repeat;
+    background: url('assets/video/答案框2.webp') center/contain no-repeat;
 }
 
 #answer-2 {
     top: 766px;
     width: 660px;
     height: 145px;
-    background: url('assets/video/答案框3.png') center/contain no-repeat;
+    background: url('assets/video/答案框3.webp') center/contain no-repeat;
 }
 
 #answer-3 {
     top: 920px;
     width: 660px;
     height: 145px;
-    background: url('assets/video/答案框4.png') center/contain no-repeat;
+    background: url('assets/video/答案框4.webp') center/contain no-repeat;
 }
 
 .answer-text {

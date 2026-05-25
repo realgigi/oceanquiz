@@ -4,3 +4,5 @@ OceanQuiz_Standalone.html
 phaser.min.js
 *.zip
 assets/video/web/
+assets/video/_backup/
+.verify/

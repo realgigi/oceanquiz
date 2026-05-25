@@ -3,7 +3,7 @@
 用法：python build_standalone.py
 輸出：OceanQuiz_Standalone.html
 
-PNG 圖片內嵌為 base64，影片保持外部引用（太大無法內嵌）。
+圖片（PNG/WebP）內嵌為 base64，影片保持外部引用（太大無法內嵌）。
 """
 import json, os, base64, mimetypes, re
 
@@ -20,29 +20,34 @@ with open(os.path.join(DIR, "style.css"), "r", encoding="utf-8") as f:
 with open(os.path.join(DIR, "game.js"), "r", encoding="utf-8") as f:
     game_js = f.read()
 
-print("3/4  內嵌 PNG 圖片 ...")
-# Find all PNG references in CSS and HTML
+print("3/4  內嵌圖片 ...")
+# Find all image references in CSS and HTML (skip _backup folder)
 video_dir = os.path.join(DIR, "assets", "video")
-png_map = {}
+IMG_MIME = {'.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg'}
+img_map = {}
 for fname in os.listdir(video_dir):
-    if fname.lower().endswith('.png'):
-        fpath = os.path.join(video_dir, fname)
-        mime = 'image/png'
-        with open(fpath, 'rb') as f:
-            data = base64.b64encode(f.read()).decode('ascii')
-        rel_path = f'assets/video/{fname}'
-        data_url = f'data:{mime};base64,{data}'
-        png_map[rel_path] = data_url
-        print(f"   內嵌: {rel_path} ({os.path.getsize(fpath) / 1024:.0f} KB)")
+    fpath = os.path.join(video_dir, fname)
+    if not os.path.isfile(fpath):
+        continue  # skip _backup folder
+    ext = os.path.splitext(fname)[1].lower()
+    if ext not in IMG_MIME:
+        continue
+    mime = IMG_MIME[ext]
+    with open(fpath, 'rb') as f:
+        data = base64.b64encode(f.read()).decode('ascii')
+    rel_path = f'assets/video/{fname}'
+    data_url = f'data:{mime};base64,{data}'
+    img_map[rel_path] = data_url
+    print(f"   內嵌: {rel_path} ({os.path.getsize(fpath) / 1024:.0f} KB)")
 
-# Replace PNG paths in CSS
+# Replace image paths in CSS
 patched_css = css
-for path, data_url in png_map.items():
+for path, data_url in img_map.items():
     patched_css = patched_css.replace(path, data_url)
 
-# Replace PNG paths in JS (for title bg image)
+# Replace image paths in JS (for title bg image)
 patched_js = game_js
-for path, data_url in png_map.items():
+for path, data_url in img_map.items():
     patched_js = patched_js.replace(f"'{path}'", f"'{data_url}'")
 
 print("4/4  組裝輸出 HTML ...")
