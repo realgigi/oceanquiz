@@ -1183,12 +1183,13 @@ const Game = {
         SoundGen.startTitleBGM();
 
         // Update question counts
-        const cats = { restoration: 0, ecology: 0, aquaculture: 0 };
+        const cats = { restoration: 0, ecology: 0, aquaculture: 0, course: 0 };
         this.questions.forEach(q => { if (cats[q.category] !== undefined) cats[q.category]++; });
-        const total = cats.restoration + cats.ecology + cats.aquaculture;
+        const total = Object.values(cats).reduce((sum, count) => sum + count, 0);
         document.getElementById('count-restoration').textContent = cats.restoration + ' 題';
         document.getElementById('count-ecology').textContent = cats.ecology + ' 題';
         document.getElementById('count-aquaculture').textContent = cats.aquaculture + ' 題';
+        document.getElementById('count-course').textContent = cats.course + ' 題';
         document.getElementById('count-all').textContent = total + ' 題';
     },
 
