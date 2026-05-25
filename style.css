@@ -315,6 +315,47 @@ body {
     to { transform: scale(1.15); }
 }
 
+/* Question counter (第 N/10 題) — 在 score 和 timer 之間 */
+#question-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 18px;
+    background: linear-gradient(135deg, rgba(20, 60, 110, 0.88), rgba(10, 40, 80, 0.88));
+    border: 2px solid rgba(126, 200, 227, 0.55);
+    border-radius: 18px;
+    box-shadow: 0 3px 10px rgba(20, 80, 160, 0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+    min-width: 96px;
+    margin-top: 32px;
+}
+#question-counter-num {
+    font-size: 36px;
+    color: #f9d423;
+    line-height: 1;
+}
+.qc-divider {
+    font-size: 26px;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 4px;
+    line-height: 1;
+}
+.qc-total {
+    font-size: 26px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1;
+}
+#question-counter.bump {
+    animation: counterBump 0.4s ease;
+}
+@keyframes counterBump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
 /* Question box */
 #question-box {
     position: absolute;

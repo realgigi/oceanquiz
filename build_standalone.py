@@ -85,6 +85,9 @@ html = f"""<!DOCTYPE html>
                     <div id="score-box" class="info-box">
                         <span class="info-box-text" id="score-text">0</span>
                     </div>
+                    <div id="question-counter">
+                        <span id="question-counter-num">1</span><span class="qc-divider">/</span><span class="qc-total">10</span>
+                    </div>
                     <div id="timer-box" class="info-box">
                         <span class="info-box-text" id="timer-text">10</span>
                     </div>

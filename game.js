@@ -1396,6 +1396,18 @@ const Game = {
         showScreen('quiz-screen');
         document.getElementById('score-text').textContent = this.score;
 
+        // Update question counter（第 N/10 題）with bump animation
+        const cnt = document.getElementById('question-counter');
+        const cntNum = document.getElementById('question-counter-num');
+        const cntTot = document.querySelector('.qc-total');
+        if (cnt && cntNum) {
+            cntNum.textContent = this.currentIndex + 1;
+            if (cntTot) cntTot.textContent = this.shuffledQuestions.length;
+            cnt.classList.remove('bump');
+            void cnt.offsetWidth;  // reflow
+            cnt.classList.add('bump');
+        }
+
         // Set question text
         const qText = document.getElementById('question-text');
         qText.textContent = q.question;
