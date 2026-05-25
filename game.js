@@ -987,9 +987,57 @@ function fitText(element, maxFontSize) {
     }
 }
 
+function escapeHtml(s) {
+    return String(s).replace(/[<>&"']/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+// ── Category labels ──
+const CATEGORY_LABELS = {
+    restoration: '資源復育',
+    ecology: '海洋生態',
+    aquaculture: '水產養殖',
+    course: '海洋教育課程',
+    all: '全部題目',
+};
+
+// ── Leaderboard (Firebase Firestore wrapper) ──
+const Leaderboard = {
+    ready: false,
+    cache: {},
+    CACHE_TTL: 20000,
+    async waitReady(timeoutMs = 4000) {
+        if (window.LeaderboardAPI) { this.ready = true; return true; }
+        return new Promise(resolve => {
+            const t = setTimeout(() => resolve(false), timeoutMs);
+            window.addEventListener('leaderboard-ready', () => {
+                clearTimeout(t);
+                this.ready = true;
+                resolve(true);
+            }, { once: true });
+        });
+    },
+    async submit(payload) {
+        const ok = await this.waitReady();
+        if (!ok || !window.LeaderboardAPI) throw new Error('排行榜離線');
+        const r = await window.LeaderboardAPI.submit(payload);
+        delete this.cache[payload.category];
+        delete this.cache['all'];  // 'all' 不會自動含其他 category，但仍清掉避免混淆
+        return r;
+    },
+    async fetchTop(category, n = 10) {
+        const ok = await this.waitReady();
+        if (!ok || !window.LeaderboardAPI) throw new Error('排行榜離線');
+        const c = this.cache[category];
+        if (c && Date.now() - c.ts < this.CACHE_TTL) return c.data;
+        const data = await window.LeaderboardAPI.fetchTop(category, n);
+        this.cache[category] = { ts: Date.now(), data };
+        return data;
+    },
+};
+
 // ── Game State ──
 const Game = {
-    state: 'LOADING', // LOADING, TITLE, QUIZ, REACTING, EXPLANATION, ENDING, RESULT
+    state: 'LOADING', // LOADING, TITLE, CATEGORY, QUIZ, REACTING, EXPLANATION, ENDING, RESULT, NAME_INPUT, LEADERBOARD
     questions: [],
     currentIndex: 0,
     score: 0,
@@ -998,6 +1046,10 @@ const Game = {
     timeLeft: 0,
     timerInterval: null,
     answered: false,
+    currentCategory: null,
+    lastGameResult: null,        // {category, score, correct, total}
+    highlightDocId: null,         // 上傳剛完成、要高亮的 doc id
+    leaderboardFromScreen: 'title', // 'title' | 'end'
 
     // Video paths (fixed videos + dynamic reaction videos)
     videos: {
@@ -1149,6 +1201,50 @@ const Game = {
             this.showCategorySelect();
         });
 
+        // ── Leaderboard entry points (defensively bind; standalone build may not have these elements) ──
+        const bind = (id, event, handler) => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener(event, handler);
+        };
+        bind('title-leaderboard-btn', 'click', () => {
+            SoundGen.play('select');
+            this.showLeaderboard('all', 'title');
+        });
+        bind('submit-score-btn', 'click', () => {
+            SoundGen.play('tap');
+            this.showNameInput();
+        });
+        bind('view-leaderboard-btn', 'click', () => {
+            SoundGen.play('tap');
+            const cat = this.lastGameResult ? this.lastGameResult.category : 'all';
+            this.showLeaderboard(cat, 'end');
+        });
+        bind('name-submit-btn', 'click', () => this.submitName());
+        bind('player-name', 'keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); this.submitName(); }
+        });
+        bind('name-skip-btn', 'click', () => {
+            SoundGen.play('tap');
+            const cat = this.lastGameResult ? this.lastGameResult.category : 'all';
+            this.showLeaderboard(cat, 'end');
+        });
+        bind('lb-back-btn', 'click', () => {
+            SoundGen.play('tap');
+            if (this.leaderboardFromScreen === 'title') {
+                this.goTitle();
+            } else {
+                this.showCategorySelect();
+            }
+        });
+        document.querySelectorAll('.lb-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                SoundGen.play('select');
+                const cat = tab.dataset.cat;
+                document.querySelectorAll('.lb-tab').forEach(t => t.classList.toggle('active', t === tab));
+                this.renderLeaderboard(cat);
+            });
+        });
+
         // Start title BGM on any user interaction (AudioContext requires gesture)
         const tryStartTitleBGM = () => {
             SoundGen.resume();
@@ -1215,6 +1311,8 @@ const Game = {
         this.streak = 0;
         this.correctCount = 0;
         this.currentIndex = 0;
+        this.currentCategory = category || 'all';
+        this.highlightDocId = null;
 
         // Filter by category
         let pool = this.questions;
@@ -1470,7 +1568,126 @@ const Game = {
         document.getElementById('end-detail').textContent =
             `答對 ${this.correctCount} / ${total} 題（${Math.round(pct)}%）`;
 
+        // Snapshot result for leaderboard submission
+        this.lastGameResult = {
+            category: this.currentCategory || 'all',
+            score: this.score,
+            correct: this.correctCount,
+            total: total,
+        };
+
+        // 分數 0 不顯示「上傳」按鈕（規則禁止 score < 1）
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn) {
+            submitBtn.style.display = this.score > 0 ? '' : 'none';
+            submitBtn.disabled = false;
+        }
+
         showScreen('end-screen');
+    },
+
+    // ── Name input / Leaderboard ──
+    showNameInput() {
+        if (!this.lastGameResult) return;
+        this.state = 'NAME_INPUT';
+        const r = this.lastGameResult;
+        document.getElementById('name-input-subtitle').textContent =
+            `${CATEGORY_LABELS[r.category] || r.category}　${r.score} 分　${r.correct}/${r.total} 題`;
+        const input = document.getElementById('player-name');
+        input.value = '';
+        const hint = document.getElementById('name-input-hint');
+        hint.textContent = '分數會上傳到排行榜';
+        hint.className = 'name-input-hint';
+        document.getElementById('name-submit-btn').disabled = false;
+        showScreen('name-input-screen');
+        setTimeout(() => input.focus(), 200);
+    },
+
+    async submitName() {
+        const input = document.getElementById('player-name');
+        const name = (input.value || '').trim().slice(0, 8);
+        const hint = document.getElementById('name-input-hint');
+        if (!name) {
+            hint.textContent = '請輸入名字';
+            hint.className = 'name-input-hint error';
+            return;
+        }
+        if (!this.lastGameResult) {
+            hint.textContent = '找不到分數資料';
+            hint.className = 'name-input-hint error';
+            return;
+        }
+        const submitBtn = document.getElementById('name-submit-btn');
+        submitBtn.disabled = true;
+        hint.textContent = '上傳中…';
+        hint.className = 'name-input-hint';
+        try {
+            const r = this.lastGameResult;
+            const doc = await Leaderboard.submit({
+                name,
+                category: r.category,
+                score: r.score,
+                correct: r.correct,
+                total: r.total,
+            });
+            this.highlightDocId = doc.id;
+            hint.textContent = '✓ 已上傳';
+            hint.className = 'name-input-hint success';
+            SoundGen.play('correct');
+            setTimeout(() => this.showLeaderboard(r.category, 'end'), 600);
+        } catch (e) {
+            console.error('排行榜上傳失敗', e);
+            hint.textContent = '上傳失敗：' + ((e && e.message) || e);
+            hint.className = 'name-input-hint error';
+            submitBtn.disabled = false;
+        }
+    },
+
+    async showLeaderboard(category, fromScreen) {
+        this.state = 'LEADERBOARD';
+        this.leaderboardFromScreen = fromScreen || 'title';
+        if (!CATEGORY_LABELS[category]) category = 'all';
+        document.querySelectorAll('.lb-tab').forEach(t => {
+            t.classList.toggle('active', t.dataset.cat === category);
+        });
+        showScreen('leaderboard-screen');
+        await this.renderLeaderboard(category);
+    },
+
+    async renderLeaderboard(category) {
+        const list = document.getElementById('lb-list');
+        list.innerHTML = '<div class="lb-loading">載入中…</div>';
+        try {
+            const rows = await Leaderboard.fetchTop(category, 10);
+            if (!rows || !rows.length) {
+                list.innerHTML = '<div class="lb-empty">還沒有人上榜，快來當第一名！</div>';
+                return;
+            }
+            const medals = ['🥇', '🥈', '🥉'];
+            const fmtDate = d => {
+                if (!d) return '';
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${day}`;
+            };
+            list.innerHTML = rows.map((r, i) => {
+                const rankCls = i < 3 ? `rank-${i+1}` : '';
+                const hi = (this.highlightDocId && this.highlightDocId === r.id) ? 'highlight' : '';
+                const rankCell = i < 3
+                    ? `<span class="lb-rank medal">${medals[i]}</span>`
+                    : `<span class="lb-rank">#${i+1}</span>`;
+                return `<div class="lb-row ${rankCls} ${hi}">
+                    ${rankCell}
+                    <span class="lb-name">${escapeHtml(r.name || '')}</span>
+                    <span class="lb-score">${r.score}</span>
+                    <span class="lb-date">${fmtDate(r.date)}</span>
+                </div>`;
+            }).join('');
+        } catch (e) {
+            console.error(e);
+            list.innerHTML = `<div class="lb-error">載入失敗：${escapeHtml((e && e.message) || String(e))}</div>`;
+        }
     }
 };
 

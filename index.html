@@ -13,6 +13,59 @@
       gtag('js', new Date());
       gtag('config', 'G-QWZV3TW3N8');
     </script>
+    <!-- Firebase Firestore (排行榜) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+      import { getFirestore, collection, addDoc, query, where, orderBy, limit, getDocs, serverTimestamp }
+        from "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyCEfNgMkfGPlP7usycF_wrNFzBM_X2h9JY",
+        authDomain: "oceanquiz-lb.firebaseapp.com",
+        projectId: "oceanquiz-lb",
+        storageBucket: "oceanquiz-lb.firebasestorage.app",
+        messagingSenderId: "973490053267",
+        appId: "1:973490053267:web:94109b9e4071fefd3e6d66",
+        measurementId: "G-WSVL36CYWC"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      window.LeaderboardAPI = {
+        async submit({ name, category, score, correct, total }) {
+          return addDoc(collection(db, 'scores'), {
+            name: String(name).slice(0, 8),
+            category,
+            score: Number(score),
+            correct: Number(correct),
+            total: Number(total),
+            timestamp: serverTimestamp(),
+          });
+        },
+        async fetchTop(category, n = 10) {
+          const q = query(
+            collection(db, 'scores'),
+            where('category', '==', category),
+            orderBy('score', 'desc'),
+            limit(n)
+          );
+          const snap = await getDocs(q);
+          return snap.docs.map(d => {
+            const x = d.data();
+            return {
+              id: d.id,
+              name: x.name,
+              score: x.score,
+              correct: x.correct,
+              total: x.total,
+              date: x.timestamp ? x.timestamp.toDate() : null,
+            };
+          });
+        }
+      };
+      window.dispatchEvent(new Event('leaderboard-ready'));
+    </script>
 </head>
 <body>
     <div id="game-viewport">
@@ -37,8 +90,9 @@
             <div id="title-screen" class="screen">
                 <img id="title-bg-image" src="" alt="">
                 <button id="start-btn" aria-label="開始遊戲">開始遊戲</button>
+                <button id="title-leaderboard-btn" aria-label="查看排行榜">🏆 排行榜</button>
                 <div class="title-footer">
-                    <div class="title-version">v1.6 (20260525)</div>
+                    <div class="title-version">v1.7 (20260525)</div>
                     <div class="title-disclaimer">資訊可能有誤，請協助回報</div>
                 </div>
             </div>
@@ -119,7 +173,43 @@
                 <div class="end-rank" id="end-rank"></div>
                 <div class="end-score" id="end-score"></div>
                 <div class="end-detail" id="end-detail"></div>
-                <button id="restart-btn">再玩一次</button>
+                <div class="end-buttons">
+                    <button id="submit-score-btn" class="primary-btn">🏆 上傳到排行榜</button>
+                    <button id="view-leaderboard-btn" class="secondary-btn">看排行榜</button>
+                    <button id="restart-btn" class="secondary-btn">再玩一次</button>
+                </div>
+            </div>
+
+            <!-- Name input overlay -->
+            <div id="name-input-screen" class="screen">
+                <div class="name-input-frame">
+                    <div class="name-input-title">輸入你的名字</div>
+                    <div class="name-input-subtitle" id="name-input-subtitle"></div>
+                    <input id="player-name" type="text" maxlength="8" placeholder="最多 8 字" autocomplete="off">
+                    <div class="name-input-hint" id="name-input-hint">分數會上傳到排行榜</div>
+                    <div class="name-input-buttons">
+                        <button id="name-submit-btn" class="primary-btn">提交</button>
+                        <button id="name-skip-btn" class="secondary-btn">略過</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboard screen -->
+            <div id="leaderboard-screen" class="screen">
+                <div class="leaderboard-frame">
+                    <div class="leaderboard-title">🏆 排行榜 Top 10</div>
+                    <div class="leaderboard-tabs">
+                        <button class="lb-tab" data-cat="restoration">復育</button>
+                        <button class="lb-tab" data-cat="ecology">生態</button>
+                        <button class="lb-tab" data-cat="aquaculture">養殖</button>
+                        <button class="lb-tab" data-cat="course">課程</button>
+                        <button class="lb-tab" data-cat="all">全部</button>
+                    </div>
+                    <div class="leaderboard-list" id="lb-list">
+                        <div class="lb-loading">載入中…</div>
+                    </div>
+                    <button id="lb-back-btn" class="primary-btn">返回</button>
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,45 @@
+// OceanQuiz 排行榜 Firestore 安全規則
+// 貼到：Firebase Console → Firestore Database → 規則 (Rules) 分頁 → 取代後按發布
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 任何人可讀取（用來顯示排行榜）
+    // 只能建立新分數，不能改、不能刪
+    match /scores/{doc} {
+      allow read: if true;
+
+      allow create: if
+        // 欄位必須剛好是這 6 個（多 1 少 1 都拒絕）
+        request.resource.data.keys().hasOnly(['name', 'category', 'score', 'correct', 'total', 'timestamp'])
+        && request.resource.data.keys().hasAll(['name', 'category', 'score', 'correct', 'total', 'timestamp'])
+
+        // name: 字串，1~8 字
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 8
+
+        // category: 五大類之一
+        && request.resource.data.category in ['restoration', 'ecology', 'aquaculture', 'course', 'all']
+
+        // score: 整數 1~9999（0 分不允許上傳）
+        && request.resource.data.score is int
+        && request.resource.data.score >= 1
+        && request.resource.data.score <= 9999
+
+        // correct: 整數 0~10
+        && request.resource.data.correct is int
+        && request.resource.data.correct >= 0
+        && request.resource.data.correct <= 10
+
+        // total: 固定 10 題
+        && request.resource.data.total == 10
+
+        // timestamp: 必須是伺服器時間（防止偽造日期）
+        && request.resource.data.timestamp == request.time;
+
+      allow update, delete: if false;
+    }
+  }
+}
