@@ -132,18 +132,28 @@ body {
     bottom: 96px;
     width: 360px;
     height: 96px;
-    background: url('assets/video/開頭影片點擊框.png') center/contain no-repeat;
+    background-image: url('assets/video/開頭影片點擊框.png'), linear-gradient(135deg, rgba(130, 235, 255, 0.8), rgba(90, 150, 255, 0.78));
+    background-position: center, center;
+    background-size: contain, 100% 100%;
+    background-repeat: no-repeat, no-repeat;
     cursor: pointer;
     z-index: 5;
-    border: none;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 48px;
     outline: none;
-    background-color: transparent;
-    transition: transform 0.15s ease, filter 0.15s ease;
+    color: #fff;
+    font-size: 40px;
+    font-weight: 900;
+    letter-spacing: 0;
+    text-shadow: 0 3px 8px rgba(10, 35, 80, 0.65);
+    box-shadow: 0 10px 26px rgba(20, 80, 160, 0.35);
+    transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
 }
 
 #start-btn:hover {
     transform: scale(1.05);
     filter: brightness(1.15);
+    box-shadow: 0 14px 32px rgba(20, 100, 200, 0.45);
 }
 
 #start-btn:active {

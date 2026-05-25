@@ -1085,10 +1085,8 @@ const Game = {
         await this.loadQuestions();
         await this.loadVideoList();
 
-        // 預載標題圖片後直接進入，不等影片下載
-        const titleImg = new Image();
-        titleImg.src = this.images.titleBg;
-        await new Promise(r => { titleImg.onload = r; titleImg.onerror = r; });
+        // 標題圖片較大，改為背景載入，避免線上等待圖片時看不到開始按鈕。
+        document.getElementById('title-bg-image').src = this.images.titleBg;
 
         document.getElementById('progress-fill').style.width = '100%';
         document.getElementById('loading-text').textContent = '載入完成！';
