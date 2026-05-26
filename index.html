@@ -51,12 +51,21 @@
           });
         },
         async fetchTop(category, n = 10) {
-          const q = query(
-            collection(db, 'scores'),
-            where('category', '==', category),
-            orderBy('score', 'desc'),
-            limit(n)
-          );
+          // 挑戰榜以題數(correct)為主、分數(score)為次排序；其餘榜以分數排序
+          const q = category === 'challenge'
+            ? query(
+                collection(db, 'scores'),
+                where('category', '==', 'challenge'),
+                orderBy('correct', 'desc'),
+                orderBy('score', 'desc'),
+                limit(n)
+              )
+            : query(
+                collection(db, 'scores'),
+                where('category', '==', category),
+                orderBy('score', 'desc'),
+                limit(n)
+              );
           const snap = await getDocs(q);
           return snap.docs.map(d => {
             const x = d.data();
@@ -99,7 +108,7 @@
                 <button id="start-btn" aria-label="開始遊戲">開始遊戲</button>
                 <button id="title-leaderboard-btn" aria-label="查看排行榜">🏆 排行榜</button>
                 <div class="title-footer">
-                    <div class="title-version">v2.1 (20260526)</div>
+                    <div class="title-version">v2.2 (20260526)</div>
                     <div class="title-disclaimer">資訊可能有誤，請協助回報</div>
                 </div>
             </div>
@@ -133,6 +142,11 @@
                         <span class="cat-icon">🌏</span>
                         <span class="cat-name">全部題目</span>
                         <span class="cat-count" id="count-all">0 題</span>
+                    </button>
+                    <button class="category-btn category-btn-challenge" data-cat="challenge">
+                        <span class="cat-icon">🔥</span>
+                        <span class="cat-name">挑戰模式</span>
+                        <span class="cat-count">闖關 240 題・答錯即止</span>
                     </button>
                 </div>
             </div>
@@ -179,7 +193,7 @@
 
             <!-- End screen -->
             <div id="end-screen" class="screen">
-                <div class="end-title">遊戲結束</div>
+                <div class="end-title" id="end-title">遊戲結束</div>
                 <div class="end-rank" id="end-rank"></div>
                 <div class="end-score" id="end-score"></div>
                 <div class="end-detail" id="end-detail"></div>
@@ -214,6 +228,7 @@
                         <button class="lb-tab" data-cat="aquaculture">養殖</button>
                         <button class="lb-tab" data-cat="course">課程</button>
                         <button class="lb-tab" data-cat="all">全部</button>
+                        <button class="lb-tab lb-tab-challenge" data-cat="challenge">🔥挑戰</button>
                     </div>
                     <div class="leaderboard-list" id="lb-list">
                         <div class="lb-loading">載入中…</div>

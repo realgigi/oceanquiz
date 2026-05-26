@@ -998,6 +998,7 @@ const CATEGORY_LABELS = {
     aquaculture: '水產養殖',
     course: '海洋教育課程',
     all: '全部題目',
+    challenge: '🔥 挑戰模式',
 };
 
 // ── Leaderboard (Firebase Firestore wrapper) ──
@@ -1038,6 +1039,8 @@ const Leaderboard = {
 // ── Game State ──
 const Game = {
     state: 'LOADING', // LOADING, TITLE, CATEGORY, QUIZ, REACTING, EXPLANATION, ENDING, RESULT, NAME_INPUT, LEADERBOARD
+    mode: 'normal',          // 'normal'（分類隨機 10 題）| 'challenge'（240 題闖關，答錯即止）
+    challengeFailed: false,  // 挑戰模式中是否已答錯（決定解說後導向結算）
     questions: [],
     currentIndex: 0,
     score: 0,
@@ -1235,7 +1238,11 @@ const Game = {
         document.getElementById('explanation-overlay').addEventListener('click', () => {
             if (this.state !== 'EXPLANATION') return;
             SoundGen.play('tap');
-            this.nextQuestion();
+            if (this.mode === 'challenge' && this.challengeFailed) {
+                this.goChallengeEnd();
+            } else {
+                this.nextQuestion();
+            }
         });
 
         document.getElementById('restart-btn').addEventListener('click', () => {
@@ -1349,6 +1356,8 @@ const Game = {
     },
 
     startGame(category) {
+        if (category === 'challenge') { this.startChallenge(); return; }
+        this.mode = 'normal';
         this.score = 0;
         this.streak = 0;
         this.correctCount = 0;
@@ -1378,7 +1387,33 @@ const Game = {
         this.showQuiz();
     },
 
-    showQuiz() {
+    // ── 挑戰模式（240 題闖關，答錯即止）──
+    startChallenge() {
+        this.mode = 'challenge';
+        this.challengeFailed = false;
+        this.score = 0;
+        this.streak = 0;
+        this.correctCount = 0;
+        this.currentIndex = 0;
+        this.currentCategory = 'challenge';
+        this.highlightDocId = null;
+
+        // 全部題目洗牌，選項順序也隨機（不分類、不抽選）
+        this.shuffledQuestions = [...this.questions].sort(() => Math.random() - 0.5).map(q => {
+            const indices = [0, 1, 2, 3].sort(() => Math.random() - 0.5);
+            return {
+                ...q,
+                choices: indices.map(i => q.choices[i]),
+                answer: indices.indexOf(q.answer),
+            };
+        });
+
+        SoundGen.stopTitleBGM();
+        SoundGen.startBGM();
+        this.showQuiz();
+    },
+
+    showQuiz(keepBg = false) {
         if (this.currentIndex >= this.shuffledQuestions.length) {
             this.goEnding();
             return;
@@ -1389,8 +1424,8 @@ const Game = {
         SoundGen.resumeBGM();
         const q = this.shuffledQuestions[this.currentIndex];
 
-        // Play background loop
-        VideoManager.play(this.videos.bgLoop, { loop: true });
+        // Play background loop（挑戰連續答題時 keepBg=true，背景不重播以免閃爍）
+        if (!keepBg) VideoManager.play(this.videos.bgLoop, { loop: true });
 
         // Update UI
         showScreen('quiz-screen');
@@ -1494,8 +1529,12 @@ const Game = {
 
         document.getElementById('score-text').textContent = this.score;
 
-        // Choose reaction video based on remaining time
-        this.playReaction(isCorrect);
+        if (this.mode === 'challenge') {
+            this.handleChallengeAnswer(isCorrect);
+        } else {
+            // Choose reaction video based on remaining time
+            this.playReaction(isCorrect);
+        }
     },
 
     hideQuizUI() {
@@ -1536,6 +1575,28 @@ const Game = {
         });
     },
 
+    // 挑戰模式作答後的銜接：答對 → 短暫高亮後自動下一題；答錯 → 出解說後結束
+    handleChallengeAnswer(isCorrect) {
+        if (isCorrect) {
+            this.state = 'REACTING';  // 鎖住，避免高亮期間重複作答
+            setTimeout(() => {
+                this.currentIndex++;
+                this.showQuiz(true);  // 保留背景，連續答題流暢不閃爍
+            }, 800);
+        } else {
+            // 答錯即闖關結束，出解說告知正解
+            this.challengeFailed = true;
+            SoundGen.stopBGM();
+            this.showExplanation(false);
+        }
+    },
+
+    goChallengeEnd() {
+        this.state = 'ENDING';
+        SoundGen.stopBGM();
+        this.showResult();
+    },
+
     timesUp() {
         if (this.answered) return;
         this.answered = true;
@@ -1544,7 +1605,6 @@ const Game = {
         this.streak = 0;
         SoundGen.pauseBGM();
         SoundGen.play('timesup');
-        SoundGen.playWrongJingle(true);
 
         // Highlight correct answer
         const q = this.shuffledQuestions[this.currentIndex];
@@ -1552,6 +1612,16 @@ const Game = {
         answerBtns.forEach(btn => btn.classList.add('disabled'));
         answerBtns[q.answer].classList.add('correct');
 
+        if (this.mode === 'challenge') {
+            // 挑戰：超時即闖關結束，不播「時間到」影片，直接出解說
+            this.challengeFailed = true;
+            SoundGen.playWrongJingle(false);
+            SoundGen.stopBGM();
+            this.showExplanation(false);
+            return;
+        }
+
+        SoundGen.playWrongJingle(true);
         this.state = 'REACTING';
         // Hide question/answer boxes so timesup video is fully visible
         this.hideQuizUI();
@@ -1568,9 +1638,10 @@ const Game = {
     showExplanation(isCorrect) {
         this.state = 'EXPLANATION';
         const q = this.shuffledQuestions[this.currentIndex];
+        const challengeOver = this.mode === 'challenge' && this.challengeFailed;
 
         const resultEl = document.getElementById('explanation-result');
-        resultEl.textContent = isCorrect ? '✓ 答對了！' : '✗ 答錯了';
+        resultEl.textContent = isCorrect ? '✓ 答對了！' : (challengeOver ? '✗ 答錯，闖關結束' : '✗ 答錯了');
         resultEl.className = isCorrect ? '' : 'wrong-result';
 
         const textEl = document.getElementById('explanation-text');
@@ -1585,6 +1656,9 @@ const Game = {
         } else {
             funfactEl.style.display = 'none';
         }
+
+        const contEl = document.getElementById('explanation-continue');
+        if (contEl) contEl.textContent = challengeOver ? '點擊看挑戰結果 →' : '點擊繼續';
 
         showScreen('explanation-overlay');
     },
@@ -1611,7 +1685,13 @@ const Game = {
 
     showResult() {
         this.state = 'RESULT';
+        if (this.mode === 'challenge') {
+            this.showChallengeResult();
+            return;
+        }
         SoundGen.play('fanfare');
+        const titleEl = document.getElementById('end-title');
+        if (titleEl) titleEl.textContent = '遊戲結束';
 
         const total = this.shuffledQuestions.length;
         const pct = total > 0 ? (this.correctCount / total) * 100 : 0;
@@ -1636,6 +1716,45 @@ const Game = {
         };
 
         // 分數 0 不顯示「上傳」按鈕（規則禁止 score < 1）
+        const submitBtn = document.getElementById('submit-score-btn');
+        if (submitBtn) {
+            submitBtn.style.display = this.score > 0 ? '' : 'none';
+            submitBtn.disabled = false;
+        }
+
+        showScreen('end-screen');
+    },
+
+    // 挑戰模式結算：以「題數」為主，含通關判定與題數分級稱號
+    showChallengeResult() {
+        const totalQ = this.shuffledQuestions.length;  // 240
+        const c = this.correctCount;
+        const cleared = c >= totalQ;
+
+        SoundGen.play(cleared || c >= 30 ? 'fanfare' : 'tap');
+
+        let rank;
+        if (cleared) rank = '🏆 海洋傳奇・全題通關';
+        else if (c >= 150) rank = '🎓 海洋大師';
+        else if (c >= 80) rank = '📚 海洋達人';
+        else if (c >= 30) rank = '🐬 海洋好手';
+        else rank = '🐟 海洋新手';
+
+        const titleEl = document.getElementById('end-title');
+        if (titleEl) titleEl.textContent = cleared ? '🎉 全題通關！' : '闖關結束';
+        document.getElementById('end-rank').textContent = rank;
+        document.getElementById('end-score').textContent = c + ' 題';
+        document.getElementById('end-detail').textContent =
+            `連續答對 ${c} / ${totalQ} 題　•　${this.score} 分`;
+
+        this.lastGameResult = {
+            category: 'challenge',
+            score: this.score,
+            correct: c,
+            total: totalQ,
+        };
+
+        // 分數 0（首題即敗）不顯示上傳按鈕
         const submitBtn = document.getElementById('submit-score-btn');
         if (submitBtn) {
             submitBtn.style.display = this.score > 0 ? '' : 'none';
@@ -1730,16 +1849,21 @@ const Game = {
                 const day = String(d.getDate()).padStart(2, '0');
                 return `${y}-${m}-${day}`;
             };
+            const isChallenge = category === 'challenge';
             list.innerHTML = rows.map((r, i) => {
                 const rankCls = i < 3 ? `rank-${i+1}` : '';
                 const hi = (this.highlightDocId && this.highlightDocId === r.id) ? 'highlight' : '';
                 const rankCell = i < 3
                     ? `<span class="lb-rank medal">${medals[i]}</span>`
                     : `<span class="lb-rank">#${i+1}</span>`;
+                // 挑戰榜以題數為主、分數小字；其餘榜顯示分數
+                const valueCell = isChallenge
+                    ? `<span class="lb-score lb-score-challenge"><span class="lb-qcount">${r.correct} 題</span><span class="lb-score-sub">${r.score} 分</span></span>`
+                    : `<span class="lb-score">${r.score}</span>`;
                 return `<div class="lb-row ${rankCls} ${hi}">
                     ${rankCell}
                     <span class="lb-name">${escapeHtml(r.name || '')}</span>
-                    <span class="lb-score">${r.score}</span>
+                    ${valueCell}
                     <span class="lb-date">${fmtDate(r.date)}</span>
                 </div>`;
             }).join('');

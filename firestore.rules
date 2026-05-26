@@ -20,21 +20,29 @@ service cloud.firestore {
         && request.resource.data.name.size() >= 1
         && request.resource.data.name.size() <= 8
 
-        // category: 五大類之一
-        && request.resource.data.category in ['restoration', 'ecology', 'aquaculture', 'course', 'all']
+        // category: 一般五類 + 挑戰模式
+        && request.resource.data.category in ['restoration', 'ecology', 'aquaculture', 'course', 'all', 'challenge']
 
-        // score: 整數 1~9999（0 分不允許上傳）
+        // score: 整數 1~9999999（挑戰 240 題分數可達數十萬；0 分不允許上傳）
         && request.resource.data.score is int
         && request.resource.data.score >= 1
-        && request.resource.data.score <= 9999
+        && request.resource.data.score <= 9999999
 
-        // correct: 整數 0~10
+        // correct / total 依模式分支：
+        //   challenge → 跑完整套 240 題，答對 0~240
+        //   其餘      → 隨機抽 10 題，答對 0~10
         && request.resource.data.correct is int
         && request.resource.data.correct >= 0
-        && request.resource.data.correct <= 10
-
-        // total: 固定 10 題
-        && request.resource.data.total == 10
+        && request.resource.data.total is int
+        && (
+             (request.resource.data.category == 'challenge'
+               && request.resource.data.total == 240
+               && request.resource.data.correct <= 240)
+             ||
+             (request.resource.data.category != 'challenge'
+               && request.resource.data.total == 10
+               && request.resource.data.correct <= 10)
+           )
 
         // timestamp: 必須是伺服器時間（防止偽造日期）
         && request.resource.data.timestamp == request.time;
