@@ -3,7 +3,10 @@ import { pfxOverlay } from "./pfx_canvas.js";
 
 const vp = document.getElementById("game-viewport");
 const pfx = await pfxOverlay(vp, { scale: 3, core: "./vendor/pixelfx/core/index.js", fx: "./vendor/pixelfx/fx" });
-const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+// 先載好效果檔：點下去才下載，手機第一題會慢半拍
+["pickups/collect-burst", "ui/coin-collect", "ui/crit-number", "ui/combo-counter", "ui/heart-lost", "impacts/hit-spark",
+ "ui/quest-complete", "ui/confetti"].forEach((id) => import(`./vendor/pixelfx/fx/${id}.js`).catch(() => {}));
+const reduceMotion =window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const origSubmit = Game.submitAnswer.bind(Game);
 Game.submitAnswer = function (idx) {
